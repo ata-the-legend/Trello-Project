@@ -14,3 +14,32 @@ class BaseModel(models.Model):
 
 
 
+class SoftQuerySet(models.QuerySet):
+    def archive(self):
+        return self.update(is_active= False)
+    
+    def restore(self):
+        return self.update(is_active= True)
+    
+class SoftManager(models.Manager):
+    def get_queryset(self):
+        return SoftQuerySet(self.model, self._db).filter(is_active = True)
+
+class SoftDeleteMixin(models.Model):
+
+    is_active = models.BooleanField(_("Is Active"), default=True)
+
+    objects = SoftManager
+
+    def archive(self):
+        self.is_active = False
+        self.save()
+
+    def restore(self):
+        self.is_active= True
+        self.save()
+
+    class Meta:
+        abstract = True
+
+
