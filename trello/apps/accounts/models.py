@@ -1,3 +1,4 @@
+from uuid import uuid4
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django.db import models
@@ -46,7 +47,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    
+
+    id = models.UUIDField(editable=False, primary_key=True, default=uuid4)    
     first_name = models.CharField(_("first name"), max_length=150, blank=True)
     last_name = models.CharField(_("last name"), max_length=150, blank=True)
     email = models.EmailField(
