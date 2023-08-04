@@ -13,7 +13,7 @@ class WorkSpace(BaseModel):
 class Board(BaseModel):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the board')
     work_space = models.ForeignKey(WorkSpace, verbose_name=_("Owner"), on_delete=models.CASCADE, help_text='work space of the board', related_name='work_space_boards')
-    background_image = models.ImageField(_("Background image"), upload_to='uploads/backgrounds/', default='uploads/backgrounds/default_background.jpg')
+    background_image = models.ImageField(_("Background image"), upload_to='uploads/background/', default='uploads/background/default_image')
 
 
 class List(BaseModel):
@@ -42,3 +42,13 @@ class Comment(BaseModel):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, verbose_name=_('Task'), help_text='Task associated with the comment', related_name='task_comments')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name=_('Author'), help_text='Author of the comment', related_name='author_comments')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, verbose_name=_('Parent'), null=True, blank=True)
+
+
+
+class Attachment(BaseModel):
+    file = models.FileField(verbose_name=_("file") , max_length=100 ,upload_to='attachments/')
+    task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task of the attachment', related_name='task_attachments')
+
+
+
+
