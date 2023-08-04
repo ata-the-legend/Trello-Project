@@ -51,4 +51,12 @@ class Attachment(BaseModel):
 
 
 
+class Activity(BaseModel):
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name=_('Author'), help_text='Author of the activity', related_name='author_activity')
+    message = models.TextField(verbose_name=_('message'), max_length=300 , help_text='message of the activity')
+    task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task associated with the activity', related_name='task_activity')
+    update_date = models.DateTimeField(verbose_name=_('update date') , auto_now=True, help_text='Activity update date')
+    
+    
+
 
