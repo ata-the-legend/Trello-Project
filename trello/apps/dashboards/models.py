@@ -13,7 +13,7 @@ class WorkSpace(BaseModel):
 class Board(BaseModel):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the board')
     work_space = models.ForeignKey(WorkSpace, verbose_name=_("Owner"), on_delete=models.CASCADE, help_text='work space of the board', related_name='work_space_boards')
-    background_image = models.ImageField(_("Background image"), upload_to='uploads/background/', default='uploads/background/default_image')
+    background_image = models.ImageField(_("Background image"), upload_to='uploads/backgrounds/', default='uploads/backgrounds/default_background.jpg')
 
 
 class List(BaseModel):
