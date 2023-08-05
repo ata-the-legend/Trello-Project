@@ -4,31 +4,56 @@ from trello.apps.core.models import BaseModel, SoftDeleteMixin
 from django.utils.translation import gettext as _
 
 
-class WorkSpace(BaseModel):
+class WorkSpace(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the workspace')
     members = models.ManyToManyField(settings.AUTH_USER_MODEL, verbose_name=_("Members"), help_text='members of the workspace', related_name='member_work_spaces')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Owner"), on_delete=models.CASCADE, help_text='The owner of the workspace', related_name='owner_work_spaces')
 
+    class Meta:
+        verbose_name = _("Work Space")
+        verbose_name_plural = _("Work Spaces")
+        ordering = ["-create_at"]
 
-class Board(BaseModel):
+    def __str__(self):
+        return f'{self.title} - owned by {self.owner}'
+
+    def add_member():
+        pass
+
+class Board(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the board')
     work_space = models.ForeignKey(WorkSpace, verbose_name=_("Owner"), on_delete=models.CASCADE, help_text='work space of the board', related_name='work_space_boards')
     background_image = models.ImageField(_("Background image"), upload_to='uploads/backgrounds/', default='uploads/backgrounds/default_background.jpg')
 
+    class Meta:
+        verbose_name = _("Board")
+        verbose_name_plural = _("Boards")
+        ordering = ["work_space"]
 
-class List(BaseModel):
+    def __str__(self):
+        return f'{self.title} - related work space: {self.work_space}'
+
+class List(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the list')
     board = models.ForeignKey(Board, verbose_name=_("Board"), on_delete=models.CASCADE, help_text='Board associated with the list', related_name='board_lists')
 
+    class Meta:
+        verbose_name = _("List")
+        verbose_name_plural = _("Lists")
+        ordering = ["board"]
+
+    def __str__(self):
+        return f'{self.title} - related board: {self.board}'
 
 
-class Label(BaseModel, SoftDeleteMixin):
+class Label(BaseModel):
     title = models.CharField(max_length=300, verbose_name=_('Title'), help_text='Title of the label')
     board = models.ForeignKey(Board, on_delete=models.CASCADE, verbose_name=_('Board'), help_text='Board associated with the label', related_name='board_labels')
     
     class Meta:
         verbose_name = _('Label')
         verbose_name_plural =_("Labels")
+
     def __str__(self):
         return self.title
 
@@ -76,7 +101,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
         return self.file
 
 
-class Activity(BaseModel, SoftDeleteMixin):
+class Activity(BaseModel):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name=_('Author'), help_text='Author of the activity', related_name='author_activity')
     message = models.TextField(verbose_name=_('message'), max_length=300 , help_text='message of the activity')
     task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task associated with the activity', related_name='task_activity')
