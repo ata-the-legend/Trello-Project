@@ -8,7 +8,7 @@ from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.core.mail import send_mail
 from django.utils import timezone
 from trello.apps.core.models import SoftQuerySet
-
+# from trello.apps.dashboards.models import 
 
 class UserManager(BaseUserManager):
 
@@ -112,3 +112,29 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.is_active= True
         self.save()
 
+    def membered_workspaces(self):
+        return self.member_work_spaces.all()
+
+    def owened_workspases(self):
+        return self.owner_work_spaces.all()
+
+    def tasked_boards(self):
+        return self.assigned_tasks.all().values('status').values('board')
+
+    def active_tasks(self):
+        # the dashboard models should cascade is_active field
+        return self.assigned_tasks.filter(is_active=True).all().fiter(status__is_active=True, status__board__is_active=True, status__board__work_space__is_active=True)
+
+    def activities_on_board(self, other):
+        return self.doer_activity.all().filter(task__status__board=other)
+
+    def teammates_in_workspace(self, other):
+        if other.owner == self:
+            return self.owened_workspases().filter(id=other.id).values('members')
+        else:
+            return self.membered_workspaces().filter(id=other.id).values('members').exclude(id=self.id) | self.membered_workspaces().filter(id=other.id).values('owner')
+        
+    def __str__(self):
+        return self.get_full_name()
+    
+    
