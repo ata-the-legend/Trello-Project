@@ -90,7 +90,14 @@ class Comment(BaseModel, SoftDeleteMixin):
 class Attachment(BaseModel , SoftDeleteMixin):
     file = models.FileField(verbose_name=_("file") , max_length=100 ,upload_to='uploads/attachments/' , blank=True)
     task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task of the attachment', related_name='task_attachments')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Owner"), on_delete=models.DO_NOTHING, related_name='owner_attachments')
 
+    @classmethod
+    def create(cls, file, task, owner):
+        attachment = Attachment.objects.create(file,task, owner)
+        message = f"{owner.get_full_name()} attached a new file."
+        Activity.objects.create(task, doer=owner, message = message)
+        return attachment
 
     class Meta:
         verbose_name = _('Attachment')
@@ -98,16 +105,15 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
 
     def __str__(self):
-        return self.file
+        return f"Attached by {self.owner.name}."
 
 
 class Activity(BaseModel):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name=_('Author'), help_text='Author of the activity', related_name='author_activity')
+
+    doer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name=_('Author'), help_text='Author of the activity', related_name='author_activity')
     message = models.TextField(verbose_name=_('message'), max_length=300 , help_text='message of the activity')
     task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task associated with the activity', related_name='task_activity')
     
-    
-
     class Meta:
         verbose_name = _('Activitie')
         verbose_name_plural =_("Activities")
@@ -115,4 +121,4 @@ class Activity(BaseModel):
 
 
     def __str__(self):
-        return f'{self.author} activity'
+        return f'{self.message}'
