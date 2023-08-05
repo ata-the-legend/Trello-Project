@@ -62,7 +62,7 @@ class Comment(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'Comment by {self.author} on task {self.task}'
 
-class Attachment(BaseModel):
+class Attachment(BaseModel , SoftDeleteMixin):
     file = models.FileField(verbose_name=_("file") , max_length=100 ,upload_to='uploads/attachments/' , blank=True)
     task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task of the attachment', related_name='task_attachments')
 
@@ -76,7 +76,7 @@ class Attachment(BaseModel):
         return self.file
 
 
-class Activity(BaseModel):
+class Activity(BaseModel, SoftDeleteMixin):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name=_('Author'), help_text='Author of the activity', related_name='author_activity')
     message = models.TextField(verbose_name=_('message'), max_length=300 , help_text='message of the activity')
     task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task associated with the activity', related_name='task_activity')
