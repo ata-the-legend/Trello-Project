@@ -57,6 +57,35 @@ class Label(BaseModel):
 
     def __str__(self):
         return self.title
+    
+    @classmethod
+    def create_label(cls, title, board):
+        label = cls.objects.create(title=title, board=board)
+        return label
+    
+    @staticmethod
+    def get_label_choices():
+        return Label.objects.values_list('title',flat=True)
+
+    @staticmethod
+    def get_board_labels(board):
+        return Label.objects.filter(board=board)
+    
+    def update_label(self, title=None):
+        if title is not None:
+            self.title = title
+            self.save()
+
+    def delete_label(self):
+
+        self.delete()
+
+    def get_tasks(self):
+        return self.label_tasks.all()
+    
+    def get_task_count(self):
+        return self.label_tasks.count()
+
 
 class Task(BaseModel, SoftDeleteMixin):
     title = models.CharField(max_length=300, verbose_name=_('Title'), help_text='Title of the task')
