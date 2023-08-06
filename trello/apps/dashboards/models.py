@@ -18,8 +18,15 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - owned by {self.owner}'
 
-    def add_member():
-        pass
+    def add_member(self, user, member):
+        if self.owner == user:
+            self.member = member
+            self.save()
+
+    def add_board(self, user, title):
+        if self.owner == user:
+            pass
+
 
 class Board(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the board')
@@ -34,6 +41,15 @@ class Board(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related work space: {self.work_space}'
 
+    def add_task(self, user, title):
+        if self.owner == user:
+            pass
+
+    def add_tasklist(self, user, title):
+        if self.owner == user:
+            pass
+
+
 class TaskList(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the Tasklist')
     board = models.ForeignKey(Board, verbose_name=_("Board"), on_delete=models.CASCADE, help_text='Board associated with the Tasklist', related_name='board_Tasklists')
@@ -46,6 +62,12 @@ class TaskList(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related board: {self.board}'
 
+    def add_task(self, user):
+        if self.owner == user:
+            pass
+
+    def change_tasklist(self, user):
+        pass
 
 class Label(BaseModel):
     title = models.CharField(max_length=300, verbose_name=_('Title'), help_text='Title of the label')
