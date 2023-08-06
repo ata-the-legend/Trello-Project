@@ -187,6 +187,34 @@ class Comment(BaseModel, SoftDeleteMixin):
 
     def __str__(self):
         return f'Comment by {self.author} on task {self.task}'
+    
+    @classmethod
+    def create_comment(cls, body, task, author, parent=None):
+        comment = cls.objects.create(body=body, task=task, author=author, parent=parent)
+        return comment
+    
+    @staticmethod
+    def get_task_comment_count(task):
+
+        return Comment.objects.filter(task=task).count()
+
+    def update_comment(self, body=None):
+        if body is not None:
+            self.body = body
+            self.save
+
+    def delete_comment(self):
+        self.delete()
+
+    def get_replies(self):
+        return Comment.objects.filter(parent=self)
+    
+    def get_task_comments(self):
+        return Comment.objects.filter(task=self.task)
+    
+    def get_author_comments(self):
+        return Comment.objects.filter(author=self.author)
+    
 
 class Attachment(BaseModel , SoftDeleteMixin):
     file = models.FileField(verbose_name=_("file") , max_length=100 ,upload_to='uploads/attachments/' , blank=True)
