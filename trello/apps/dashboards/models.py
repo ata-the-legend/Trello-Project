@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from trello.apps.core.models import BaseModel, SoftDeleteMixin
 from django.utils.translation import gettext as _
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class WorkSpace(BaseModel, SoftDeleteMixin):
@@ -72,6 +73,77 @@ class Task(BaseModel, SoftDeleteMixin):
         verbose_name_plural =_('Tasks')
     def __str__(self):
         return f'Task {self.title}'
+    
+    @classmethod
+    def create_task(cls, title, description, status, order, labels=None, start_date=None, end_date=None, assigned_to=None):
+        task = cls.objects.create(
+            title=title,
+            description=description,
+            status=status,
+            order=order,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        if labels:
+            task.labels.set(labels)
+        if assigned_to:
+            task.assigned_to.set(assigned_to)
+        return task
+    
+    def update_task(self, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
+        if title is not None:
+            self.title = title
+        if description is not None:
+            self.description = description
+        if status is not None:
+            self.status = status
+        if order is not None:
+            self.order = order
+        if start_date is not None:
+            self.start_date = start_date
+        if end_date is not None:
+            self.end_date = end_date
+        if labels is not None:
+            self.labels.set(labels)
+        if assigned_to is not None:
+            self.assigned_to.set(assigned_to)
+        self.save()
+
+    def delete_task(self):
+        try:
+            self.delete()
+        except ObjectDoesNotExist:
+            pass
+
+    def get_comment(self):
+        return self.task_comments.all()
+    
+    def get_attachments(self):
+        return self.task_attachments.all()
+    
+    def get_activity(self):
+        return self.task_activity.all()
+    
+    def get_assigned_users(self):
+        return self.assigned_to.all()
+    
+    @staticmethod
+    def get_status_choices():
+        return TaskList.objects.values_list('title', flat=True)
+    
+    @staticmethod
+    def get_label_choices():
+        return Label.objects.values_list('title',flat=True)
+    
+    @staticmethod
+    def get_start_date_choices():
+        return Task.objects.exclude(start_date=None).values_list('start_date',flat=True).distinct()
+    
+    @staticmethod
+    def get_end_date_choices():
+        return Task.objects.exclude(end_date=None).values_list('end_date',flat=True).distinct()
+
+
     
 class Comment(BaseModel, SoftDeleteMixin):
     body = models.TextField(verbose_name=_('Body'), help_text='Body of the comment')
