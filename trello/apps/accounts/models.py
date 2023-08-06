@@ -8,7 +8,7 @@ from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.core.mail import send_mail
 from django.utils import timezone
 from trello.apps.core.models import SoftQuerySet
-# from trello.apps.dashboards.models import 
+
 
 class UserManager(BaseUserManager):
 
@@ -16,7 +16,7 @@ class UserManager(BaseUserManager):
         """
         Create and save a user with the given email, and password.
         """
-        query_set = QuerySet
+        # query_set = QuerySet
 
         if extra_fields.get('avatar', True) is None:
             del extra_fields['avatar']
@@ -73,7 +73,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
     avatar = models.ImageField(_("avatar"), upload_to='uploads/avatars/', default='uploads/avatars/default.jpg', blank=False, null=False)
-    mobile = models.CharField(_("mobile number"), max_length=11, unique=True, blank=True, null=True)
+    mobile = models.CharField(
+        _("mobile number"),
+        max_length=11,
+        error_messages={
+            "unique": _("A user with that email already exists."),
+        }, 
+        unique=True, 
+        blank=True, 
+        null=True
+    )
 
     objects = UserManager()
 
