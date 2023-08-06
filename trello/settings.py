@@ -43,7 +43,9 @@ DEVELOPED_APPS = [
     'trello.apps.accounts.apps.AccountsConfig',
     'trello.apps.dashboards.apps.DashboardsConfig',
 ]
-THIRD_PARTY_APPS = []
+THIRD_PARTY_APPS = [
+    'coverage',
+]
 
 INSTALLED_APPS = SYSTEM_APPS + DEVELOPED_APPS + THIRD_PARTY_APPS
 
