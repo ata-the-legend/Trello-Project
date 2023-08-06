@@ -245,10 +245,14 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
     @classmethod
     def create(cls, file, task, owner):
-        attachment = cls.objects.create(file,task, owner)
+        attachment = cls.objects.create(file=file,task=task, owner=owner)
         message = f"{owner.get_full_name()} attached a new file."
-        Activity.objects.create(task, doer=owner, message = message)
+        Activity.objects.create(task= task, doer=owner, message = message)
         return attachment
+
+
+    def owner_other_attachments_on_board(self):
+        pass
 
     class Meta:
         verbose_name = _('Attachment')
@@ -264,6 +268,21 @@ class Activity(BaseModel):
     doer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, verbose_name=_('Doer'), help_text='Doer of the activity', related_name='doer_activity')
     message = models.TextField(verbose_name=_('message'), max_length=300 , help_text='message of the activity')
     task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task associated with the activity', related_name='task_activity')
+    
+    @classmethod
+    def attach_activity_in_board(self, board):
+        pass
+
+    @classmethod
+    def task_create_activity_in_board(self, board):
+        pass
+
+    @classmethod
+    def from_to_date(self, from_date, to_date):
+        pass
+
+    def doer_other_activitys_on_board(self):
+        return self.doer.activities_on_board(self.task.status.board)
     
     class Meta:
         verbose_name = _('Activitie')
