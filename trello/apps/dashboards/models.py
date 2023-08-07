@@ -125,8 +125,30 @@ class Task(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'Task {self.title}'
     
-    @classmethod
+    
     def create_task(cls, title, description, status, order, labels=None, start_date=None, end_date=None, assigned_to=None):
+        """
+        Creates a new Task object with the given parameters.
+        
+        :param title: The title of the task.
+        :type title: str
+        :param description: The description of the task.
+        :type description: str
+        :param status: The status of the task.
+        :type status: TaskList
+        :param order: The order of the task.
+        :type order: int
+        :param labels: The labels associated with the task (optional).
+        :type labels: list[Label]
+        :param start_date: The start date of the task (optional).
+        :type start_date: datetime.datetime
+        :param end_date: The end date of the task (optional).
+        :type end_date: datetime.datetime
+        :param assigned_to: The users assigned to the task (optional).
+        :type assigned_to: list[User]
+        :return: The created Task object.
+        :rtype: Task
+        """
         task = cls.objects.create(
             title=title,
             description=description,
@@ -142,6 +164,26 @@ class Task(BaseModel, SoftDeleteMixin):
         return task
     
     def update_task(self, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
+        """
+        Updates the Task object with the given parameters.
+        
+        :param title: The new title of the task (optional).
+        :type title: str
+        :param description: The new description of the task (optional).
+        :type description: str
+        :param status: The new status of the task (optional).
+        :type status: TaskList
+        :param order: The new order of the task (optional).
+        :type order: int
+        :param labels: The new labels associated with the task (optional).
+        :type labels: list[Label]
+        :param start_date: The new start date of the task (optional).
+        :type start_date: datetime.datetime
+        :param end_date: The new end date of the task (optional).
+        :type end_date: datetime.datetime
+        :param assigned_to: The new users assigned to the task (optional).
+        :type assigned_to: list[User]
+        """
         if title is not None:
             self.title = title
         if description is not None:
@@ -160,38 +202,79 @@ class Task(BaseModel, SoftDeleteMixin):
             self.assigned_to.set(assigned_to)
         self.save()
 
-    def delete_task(self):
-        try:
-            self.delete()
-        except ObjectDoesNotExist:
-            pass
-
     def get_comment(self):
+        """
+        Returns the comments associated with the Task object.
+
+        :return: The comments associated with the Task object.
+        :rtype: QuerySet[Comment]
+        """
         return self.task_comments.all()
     
     def get_attachments(self):
+        """
+        Returns the attachments associated with the Task object.
+        
+        :return: The attachments associated with the Task object.
+        :rtype: QuerySet[Attachment]
+        """
         return self.task_attachments.all()
     
     def get_activity(self):
+        """
+        Returns the activities associated with the Task object.
+        
+        :return: The activities associated with the Task object.
+        :rtype: QuerySet[Activity]
+        """
         return self.task_activity.all()
     
     def get_assigned_users(self):
+        """
+        Returns the users assigned to the Task object.
+        
+        :return: The users assigned to the Task object.
+        :rtype: QuerySet[User]
+        """
         return self.assigned_to.all()
     
-    @staticmethod
+    
     def get_status_choices():
+        """
+        Returns a list of choices for the status field of a Task object.
+        
+        :return: A list of choices for the status field of a Task object.
+        :rtype: list[str]
+        """
         return TaskList.objects.values_list('title', flat=True)
     
-    @staticmethod
+    
     def get_label_choices():
+        """
+        Returns a list of choices for the labels field of a Task object.
+        
+        :return: A list of choices for the labels field of a Task object.
+        :rtype: list[str]
+        """
         return Label.objects.values_list('title',flat=True)
     
-    @staticmethod
+    
     def get_start_date_choices():
+        """
+        Returns a list of choices for the start_date field of a Task object.
+        
+        :return: A list of choices for the start_date field of a Task object.
+        :rtype: list[datetime.datetime]
+        """
         return Task.objects.exclude(start_date=None).values_list('start_date',flat=True).distinct()
     
-    @staticmethod
     def get_end_date_choices():
+        """
+        Returns a list of choices for the end_date field of a Task object.
+        
+        :return: A list of choices for the end_date field of a Task object.
+        :rtype: list[datetime.datetime]
+        """
         return Task.objects.exclude(end_date=None).values_list('end_date',flat=True).distinct()
 
 
