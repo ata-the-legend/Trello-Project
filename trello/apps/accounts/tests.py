@@ -1,6 +1,7 @@
 from django.test import TestCase
 from .models import User
 from trello.apps.dashboards.models import *
+from django.core import mail
 # Create your tests here.
 
 class UserTestCase(TestCase):
@@ -104,4 +105,25 @@ class UserTestCase(TestCase):
         self.assertCountEqual(self.user_ata.teammates_in_workspace(self.workspace_ata), [self.user_ali])
         self.assertCountEqual(self.user_ata.teammates_in_workspace(self.workspace_ata_2), [])
         self.assertCountEqual(self.user_ali.teammates_in_workspace(self.workspace_ata), [self.user_ata])
+    
+    def test_required_email(self):
+        with self.assertRaises(ValueError):
+            user = User.objects.create_user(email='', password='1234', first_name='test', last_name='test', avatar=None, mobile='01234567891')
+
+    def test_superuser_default_fields(self):
+        with self.assertRaises(ValueError):
+            user = User.objects.create_superuser(email='newsuper@gmail.com', is_staff=False, password='1234', first_name='test', last_name='test', avatar=None, mobile='01234567891')
+        with self.assertRaises(ValueError):
+            user = User.objects.create_superuser(email='newsuper@gmail.com', is_superuser=False, password='1234', first_name='test', last_name='test', avatar=None, mobile='01234567891')
         
+    def test_send_email(self):
+        # Send message.
+        self.user_ata.email_user(
+            "Subject",
+            "Test message.",
+        )
+        # Test that one message has been sent.
+        self.assertEqual(len(mail.outbox), 1)
+
+        # Verify that the subject of the first message is correct.
+        self.assertEqual(mail.outbox[0].subject, "Subject")
