@@ -293,31 +293,74 @@ class Comment(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'Comment by {self.author} on task {self.task}'
     
-    @classmethod
     def create_comment(cls, body, task, author, parent=None):
+        """
+        Creates a new Comment object with the given parameters.
+        
+        :param body: The body of the comment.
+        :type body: str
+        :param task: The task associated with the comment.
+        :type task: Task
+        :param author: The author of the comment.
+        :type author: User
+        :param parent: The parent comment (optional).
+        :type parent: Comment
+        :return: The created Comment object.
+        :rtype: Comment
+        """
         comment = cls.objects.create(body=body, task=task, author=author, parent=parent)
         return comment
     
-    @staticmethod
+    
     def get_task_comment_count(task):
+        """
+        Returns the count of comments on the given task.
+        
+        :param task: The task to count comments for.
+        :type task: Task
+        :return: The count of comments on the given task.
+        :rtype: int
+        """
 
         return Comment.objects.filter(task=task).count()
 
     def update_comment(self, body=None):
+        """
+        Updates the Comment object with the given body.
+        
+        :param body: The new body of the comment (optional).
+        :type body: str
+        """
         if body is not None:
             self.body = body
             self.save
 
-    def delete_comment(self):
-        self.delete()
 
     def get_replies(self):
+        """
+        Returns the replies to the Comment object.
+        
+        :return: The replies to the Comment object.
+        :rtype: QuerySet[Comment]
+        """
         return Comment.objects.filter(parent=self)
     
     def get_task_comments(self):
+        """
+        Returns the comments on the same task as the Comment object.
+        
+        :return: The comments on the same task as the Comment object.
+        :rtype: QuerySet[Comment]
+        """
         return Comment.objects.filter(task=self.task)
     
     def get_author_comments(self):
+        """
+        Returns the comments by the same author as the Comment object.
+        
+        :return: The comments by the same author as the Comment object.
+        :rtype: QuerySet[Comment]
+        """
         return Comment.objects.filter(author=self.author)
     
 
