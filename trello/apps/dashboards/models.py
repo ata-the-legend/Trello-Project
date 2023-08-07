@@ -80,32 +80,68 @@ class Label(BaseModel):
     def __str__(self):
         return self.title
     
-    @classmethod
     def create_label(cls, title, board):
+        """
+        Creates a new Label object with the given parameters.
+        
+        :param title: The title of the label.
+        :type title: str
+        :param board: The board associated with the label.
+        :type board: Board
+        :return: The created Label object.
+        :rtype: Label
+        """
         label = cls.objects.create(title=title, board=board)
         return label
     
-    @staticmethod
     def get_label_choices():
+        """
+        Returns a list of choices for the labels field of a Task object.
+        
+        :return: A list of choices for the labels field of a Task object.
+        :rtype: list[str]
+        """
         return Label.objects.values_list('title',flat=True)
 
     @staticmethod
     def get_board_labels(board):
+        """
+        Returns the labels associated with the given board.
+        
+        :param board: The board to retrieve labels for.
+        :type board: Board
+        :return: The labels associated with the given board.
+        :rtype: QuerySet[Label]
+        """
         return Label.objects.filter(board=board)
     
     def update_label(self, title=None):
+        """
+        Updates the Label object with the given title.
+        
+        :param title: The new title of the label (optional).
+        :type title: str
+        """
         if title is not None:
             self.title = title
             self.save()
 
-    def delete_label(self):
-
-        self.delete()
-
     def get_tasks(self):
+        """
+        Returns the tasks associated with the Label object.
+        
+        :return: The tasks associated with the Label object.
+        :rtype: QuerySet[Task]
+        """
         return self.label_tasks.all()
     
     def get_task_count(self):
+        """
+        Returns the count of tasks associated with the Label object.
+        
+        :return: The count of tasks associated with the Label object.
+        :rtype: int
+        """
         return self.label_tasks.count()
 
 
