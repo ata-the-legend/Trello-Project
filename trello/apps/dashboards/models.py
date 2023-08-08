@@ -345,8 +345,41 @@ class Comment(BaseModel, SoftDeleteMixin):
         :rtype: Comment
         """
         comment = cls.objects.create(body=body, task=task, author=author, parent=parent)
-        return comment
     
+        # Create an Activity object to log the creation of the comment
+        if parent:
+            message = f"{author.get_full_name()} replied to a comment on task {task.title}."
+        else:
+            message = f"{author.get_full_name()} added a new comment to task {task.title}."
+    
+        Activity.objects.create(task=task, doer=author, message=message)
+    
+        return comment
+   
+    def update_comment(self, body=None):
+        """
+        Updates the Comment object with the given body.
+        
+        :param body: The new body of the comment (optional).
+        :type body: str
+        """
+        if body is not None:
+            self.body = body
+            self.save
+            message = f"{self.author.get_full_name()} updated a comment on task {self.task.title}."
+            Activity.objects.create(task=self.task, doer=self.author, message=message)
+
+    def delete(self):
+        """
+        Soft-deletes the Comment object.
+        """
+        self.is_deleted = True
+        self.save()
+    
+        # Create an Activity object to log the deletion of the comment
+        message = f"{self.author.get_full_name()} deleted a comment on task {self.task.title}."
+        Activity.objects.create(task=self.task, doer=self.author, message=message)
+
     
     def get_task_comment_count(task):
         """
@@ -360,16 +393,6 @@ class Comment(BaseModel, SoftDeleteMixin):
 
         return Comment.objects.filter(task=task).count()
 
-    def update_comment(self, body=None):
-        """
-        Updates the Comment object with the given body.
-        
-        :param body: The new body of the comment (optional).
-        :type body: str
-        """
-        if body is not None:
-            self.body = body
-            self.save
 
 
     def get_replies(self):
