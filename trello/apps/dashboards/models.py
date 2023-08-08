@@ -197,6 +197,8 @@ class Task(BaseModel, SoftDeleteMixin):
             task.labels.set(labels)
         if assigned_to:
             task.assigned_to.set(assigned_to)
+        message = f"A new task {title} was created."
+        Activity.objects.create(task=task, doer=assigned_to[0], message=message)
         return task
     
     def update_task(self, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
@@ -237,6 +239,21 @@ class Task(BaseModel, SoftDeleteMixin):
         if assigned_to is not None:
             self.assigned_to.set(assigned_to)
         self.save()
+
+        message = f"Task {self.title} was updated."
+        Activity.objects.create(task=self, doer=assigned_to[0], message=message)
+    
+    def delete(self):
+        """
+        Soft-deletes the Task object.
+        """
+        self.is_deleted = True
+        self.save()
+    
+        # Create an Activity object to log the deletion of the task
+        message = f"Task {self.title} was deleted."
+        Activity.objects.create(task=self, doer=self.assigned_to.first(), message=message)
+
 
     def get_comment(self):
         """
