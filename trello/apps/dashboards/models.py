@@ -80,7 +80,7 @@ class Label(BaseModel):
     def __str__(self):
         return self.title
     
-    def create_label(cls, title, board):
+    def create_label(cls, title, board,task,user):
         """
         Creates a new Label object with the given parameters.
         
@@ -92,8 +92,39 @@ class Label(BaseModel):
         :rtype: Label
         """
         label = cls.objects.create(title=title, board=board)
+        message = f"{user.get_full_name()} created a new label {title} on task {task.title}."
+        Activity.objects.create(task=task, doer=user, message=message)
         return label
     
+    def delete(self, task=None, user=None):
+        """
+        Soft-deletes the Label object.
+        
+        :param task: The task associated with the label deletion (optional).
+        :type task: Task
+        :param user: The user who deleted the label (optional).
+        :type user: User
+        """
+        self.is_deleted = True
+        self.save()
+    
+        # Create an Activity object to log the deletion of the label
+        message = f"{user.get_full_name()} deleted the label {self.title} on task {task.title}."
+        Activity.objects.create(task=task, doer=user, message=message)
+
+    def update_label(self, title=None, task =None, user = None):
+        """
+        Updates the Label object with the given title.
+        
+        :param title: The new title of the label (optional).
+        :type title: str
+        """
+        if title is not None:
+            self.title = title
+            self.save()
+            message = f"{user.get_full_name()} updated the label {self.title} on task {task.title}."
+            Activity.objects.create(task=task, doer=user, message=message)
+            
     def get_label_choices():
         """
         Returns a list of choices for the labels field of a Task object.
@@ -103,7 +134,7 @@ class Label(BaseModel):
         """
         return Label.objects.values_list('title',flat=True)
 
-    @staticmethod
+    
     def get_board_labels(board):
         """
         Returns the labels associated with the given board.
@@ -115,16 +146,8 @@ class Label(BaseModel):
         """
         return Label.objects.filter(board=board)
     
-    def update_label(self, title=None):
-        """
-        Updates the Label object with the given title.
-        
-        :param title: The new title of the label (optional).
-        :type title: str
-        """
-        if title is not None:
-            self.title = title
-            self.save()
+
+
 
     def get_tasks(self):
         """
