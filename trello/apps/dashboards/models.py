@@ -92,8 +92,6 @@ class Label(BaseModel):
         :rtype: Label
         """
         label = cls.objects.create(title=title, board=board)
-        message = f"{user.get_full_name()} created a new label {title} on task {task.title}."
-        Activity.objects.create(task=task, doer=user, message=message)
         return label
     
     def delete(self, task=None, user=None):
