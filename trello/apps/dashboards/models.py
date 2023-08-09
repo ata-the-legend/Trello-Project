@@ -493,7 +493,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
 
     def owner_other_attachments_on_board(self):
-        pass
+        return self.objects.filter(owner= self.owner, task__status__board__in= self.task.status.board)
 
     class Meta:
         verbose_name = _('Attachment')
@@ -511,16 +511,16 @@ class Activity(BaseModel):
     task = models.ForeignKey(Task,verbose_name=_('Task'), on_delete=models.CASCADE,  help_text='Task associated with the activity', related_name='task_activity')
     
     @classmethod
-    def attach_activity_in_board(self, board):
-        pass
+    def attachment_activity_on_board(cls, board: Board):
+        return cls.objects.filter(task__status__board__in= board, message__contains='attached')
 
     @classmethod
-    def task_create_activity_in_board(self, board):
-        pass
+    def task_create_activity_on_board(cls, board: Board):
+        return cls.objects.filter(task__status__board__in= board, message__contains='new task')
 
     @classmethod
-    def from_to_date(self, from_date, to_date):
-        pass
+    def from_to_date_on_board(cls, from_date, to_date, board: Board):
+        return cls.objects.filter(task__status__board__in= board, update_at__gt=from_date, update_at__lge=to_date)
 
     def doer_other_activitys_on_board(self):
         return self.doer.activities_on_board(self.task.status.board)
