@@ -18,19 +18,24 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - owned by {self.owner}'
 
-    def add_member(self, user, member):
-        if self.owner == user:
-            self.member = member
-            self.save()
+    def add_member(self, member):
+        self.settings.AUTH_USER_MODEL.add(member)
 
-    def add_board(self, user, title):
-        if self.owner == user:
-            pass
+    def add_board(self, title, **extra_fields):
+        if extra_fields.get('background_image', True) is None:
+            del extra_fields['background_image']
+        return Board.objects.create(title=title, work_space=self, **extra_fields)
+
+    def work_space_members(self):
+        return self.members.all() | WorkSpace.objects.filter(owner=self.owner)
+
+    def work_space_boards(self):
+        return Board.objects.filter(work_space=self)
 
 
 class Board(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the board')
-    work_space = models.ForeignKey(WorkSpace, verbose_name=_("Workspace"), on_delete=models.CASCADE, help_text='work space of the board', related_name='work_space_boards')
+    work_space = models.ForeignKey(WorkSpace, verbose_name=_("Workspace"), on_delete=models.CASCADE, help_text='work space of the board', related_name='board_work_spaces')
     background_image = models.ImageField(_("Background image"), upload_to='uploads/backgrounds/', default='uploads/backgrounds/default_background.jpg')
 
     class Meta:
@@ -41,13 +46,19 @@ class Board(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related work space: {self.work_space}'
 
-    def add_task(self, user, title):
-        if self.owner == user:
-            pass
+    def add_task(self, title, description, status, order, labels=None, start_date=None, end_date=None, assigned_to=None):
+        return Task.objects.create_task(
+            title=title,
+            description=description,
+            status=status,
+            order=order,
+            start_date=start_date,
+            end_date=end_date,
+            assigned_to=assigned_to,
+        )
 
-    def add_tasklist(self, user, title):
-        if self.owner == user:
-            pass
+    def add_tasklist(self, title):
+        return self.TaskList_set.create()
 
 
 class TaskList(BaseModel, SoftDeleteMixin):
@@ -62,12 +73,19 @@ class TaskList(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related board: {self.board}'
 
-    def add_task(self, user):
-        if self.owner == user:
-            pass
+    def add_task_list(self, title, description, order, labels=None, start_date=None, end_date=None, assigned_to=None):
+        return self.Task_set.create_task(
+            title=title,
+            description=description,
+            status=self.title,
+            order=order,
+            start_date=start_date,
+            end_date=end_date,
+            assigned_to=assigned_to,
+        )
 
-    def change_tasklist(self, user):
-        pass
+    def change_tasklist(self, new_title):
+        TaskList.objects.update(title=new_title, board=self.board)
 
 class Label(BaseModel):
     title = models.CharField(max_length=300, verbose_name=_('Title'), help_text='Title of the label')
