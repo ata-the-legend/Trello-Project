@@ -21,6 +21,10 @@ class SoftQuerySet(models.QuerySet):
     def restore(self):
         return self.update(is_active= True)
     
+class HardManager(models.Manager):
+    def get_queryset(self):
+        return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all()
+
 class SoftManager(models.Manager):
     def get_queryset(self):
         return SoftQuerySet(self.model, self._db).filter(is_active = True)
@@ -29,7 +33,8 @@ class SoftDeleteMixin(models.Model):
 
     is_active = models.BooleanField(_("Is Active"), default=True)
 
-    objects = SoftManager
+    objects = SoftManager()
+    original_objects = HardManager()
 
     def archive(self):
         self.is_active = False
