@@ -73,7 +73,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         ),
     )
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
-    avatar = models.ImageField(_("avatar"), upload_to='uploads/avatars/', default='uploads/avatars/default.jpg', blank=False, null=False)
+    avatar = models.ImageField(
+        _("avatar"), 
+        upload_to='uploads/avatars/', 
+        default='uploads/avatars/default.jpg', 
+        blank=False, 
+        null=False,
+        )
     mobile = models.CharField(
         _("mobile number"),
         max_length=11,
@@ -132,8 +138,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         return set(Board.objects.filter(board_Tasklists__in= self.assigned_tasks.all().values('status')))
 
     def active_tasks(self):
-        # the dashboard models should cascade is_active field
-        return self.assigned_tasks.filter(is_active=True).all().filter(status__is_active=True, status__board__is_active=True, status__board__work_space__is_active=True)
+        return self.assigned_tasks.all()
+        # return Task.objects.filter(assigned_to=self)
+        # return self.assigned_tasks.filter(is_active=True).all()\
+        #     .filter(status__is_active=True, status__board__is_active=True, status__board__work_space__is_active=True)
+
+    def tasks_has_deadline(self):
+        return self.assigned_tasks.exclude(end_date__lt= timezone.now()) 
 
     def activities_on_board(self, other):
         return self.doer_activity.all().filter(task__status__board=other)
@@ -142,7 +153,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         if other.owner == self:
             return User.objects.filter(id__in = self.owened_workspases().filter(id=other.id).values('members'))
         else:
-            return User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('members')).exclude(id=self.id) | User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('owner'))
+            return User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('members')).exclude(id=self.id) \
+                  | User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('owner'))
         
     def __str__(self):
         return self.get_full_name()
