@@ -18,15 +18,15 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
         return f'{self.title} - owned by {self.owner}'
 
     def add_member(self, member):
-        self.settings.AUTH_USER_MODEL.add(member)
+        self.members.add(member)
 
-    def add_board(self, title, **extra_fields):
-        if extra_fields.get('background_image', True) is None:
-            del extra_fields['background_image']
-        return Board.objects.create(title=title, work_space=self, **extra_fields)
+    def add_board(self, title, background_image):
+        if background_image is None:
+            return Board.objects.create(title=title, work_space=self)
+        return Board.objects.create(title=title, work_space=self, background_image=background_image)
 
     def work_space_members(self):
-        return self.members.all() | WorkSpace.objects.filter(owner=self.owner)
+        return self.members.all() | settings.AUTH_USER_MODEL.objects.filter(owner=self.owner)
 
     # def work_space_boards(self):
     #     return Board.objects.filter(work_space=self)
@@ -63,19 +63,19 @@ class Board(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related work space: {self.work_space}'
 
-    def add_task(self, title, description, status, order, labels=None, start_date=None, end_date=None, assigned_to=None):
-        return Task.objects.create_task(
-            title=title,
-            description=description,
-            status=status,
-            order=order,
-            start_date=start_date,
-            end_date=end_date,
-            assigned_to=assigned_to,
-        )
-
     def add_tasklist(self, title):
-        return self.TaskList_set.create()
+        return self.board_Tasklists.create(title=title)
+    
+    def get_board_labels(self):
+        """
+        Returns the labels associated with the given board.
+        
+        :param board: The board to retrieve labels for.
+        :type board: Board
+        :return: The labels associated with the given board.
+        :rtype: QuerySet[Label]
+        """
+        return Label.objects.filter(board=self)
     
     def archive(self):
         list_qs = self.board_Tasklists.all()
@@ -104,19 +104,19 @@ class TaskList(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related board: {self.board}'
 
-    def add_task_list(self, title, description, order, labels=None, start_date=None, end_date=None, assigned_to=None):
-        return self.Task_set.create_task(
+    def add_task(self, title, description='', labels=None, start_date=None, end_date=None, assigned_to=None):
+        return Task.create_task(
             title=title,
+            status=self,
             description=description,
-            status=self.title,
-            order=order,
             start_date=start_date,
             end_date=end_date,
+            labels=labels,
             assigned_to=assigned_to,
         )
 
-    def change_tasklist(self, new_title):
-        TaskList.objects.update(title=new_title, board=self.board)
+    def task_count(self):
+        return self.status_tasks.all().count()
 
     def archive(self):
         self.status_tasks.all().archive()
@@ -139,7 +139,7 @@ class Label(BaseModel):
         return self.title
     
     @classmethod
-    def create_label(cls, title, board,task,user):
+    def create_label(cls, title, board):
         """
         Creates a new Label object with the given parameters.
         
@@ -153,34 +153,11 @@ class Label(BaseModel):
         label = cls.objects.get_or_create(title=title, board=board)
         return label
     
-    def delete(self, task=None, user=None):
-        """
-        Soft-deletes the Label object.
-        
-        :param task: The task associated with the label deletion (optional).
-        :type task: Task
-        :param user: The user who deleted the label (optional).
-        :type user: User
-        """
-        self.is_deleted = True
-        self.save()
-    
-        # Create an Activity object to log the deletion of the label
-        message = f"{user.get_full_name()} deleted the label {self.title} on task {task.title}."
-        Activity.objects.create(task=task, doer=user, message=message)
 
-    def update_label(self, title=None, task =None, user = None):
-        """
-        Updates the Label object with the given title.
-        
-        :param title: The new title of the label (optional).
-        :type title: str
-        """
-        if title is not None:
-            self.title = title
-            self.save()
-            message = f"{user.get_full_name()} updated the label {self.title} on task {task.title}."
-            Activity.objects.create(task=task, doer=user, message=message)
+        # Create an Activity object to log the deletion of the label
+        # message = f"{user.get_full_name()} deleted the label {self.title} on task {task.title}."
+        # Activity.objects.create(task=task, doer=user, message=message)
+
             
     def get_label_choices():
         """
@@ -192,20 +169,6 @@ class Label(BaseModel):
         return Label.objects.values_list('title',flat=True)
 
     
-    def get_board_labels(board):
-        """
-        Returns the labels associated with the given board.
-        
-        :param board: The board to retrieve labels for.
-        :type board: Board
-        :return: The labels associated with the given board.
-        :rtype: QuerySet[Label]
-        """
-        return Label.objects.filter(board=board)
-    
-
-
-
     def get_tasks(self):
         """
         Returns the tasks associated with the Label object.
@@ -229,7 +192,7 @@ class Task(BaseModel, SoftDeleteMixin):
     title = models.CharField(max_length=300, verbose_name=_('Title'), help_text='Title of the task')
     description = models.TextField(verbose_name=_('Description'), help_text='Description of the task')
     status = models.ForeignKey(TaskList ,verbose_name=_('Status'), on_delete=models.CASCADE, help_text='Status of the task', related_name='status_tasks')
-    order = models.IntegerField(verbose_name=_('Order'), help_text='Order of the task')
+    order = models.IntegerField(verbose_name=_('Order'), help_text='Order of the task',default=1)
     labels = models.ManyToManyField(Label, verbose_name=_('Label'), help_text='Label associated with the task', related_name='label_tasks')
     start_date = models.DateTimeField(verbose_name=_('Start Date'), help_text='Start date of the task', null=True, blank=True)
     end_date = models.DateTimeField(verbose_name=_('End Date'), help_text='End date of the task', null=True, blank=True)
@@ -241,8 +204,8 @@ class Task(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'Task {self.title}'
     
-    
-    def create_task(cls, title, description, status, order, labels=None, start_date=None, end_date=None, assigned_to=None):
+    @classmethod
+    def create_task(cls, title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
         """
         Creates a new Task object with the given parameters.
         
@@ -265,6 +228,9 @@ class Task(BaseModel, SoftDeleteMixin):
         :return: The created Task object.
         :rtype: Task
         """
+
+        order = status.task_count()+1
+
         task = cls.objects.create(
             title=title,
             description=description,
@@ -281,7 +247,7 @@ class Task(BaseModel, SoftDeleteMixin):
         Activity.objects.create(task=task, doer=assigned_to[0], message=message)
         return task
     
-    def update_task(self, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
+    def update_task(self, doer, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
         """
         Updates the Task object with the given parameters.
         
@@ -302,37 +268,47 @@ class Task(BaseModel, SoftDeleteMixin):
         :param assigned_to: The new users assigned to the task (optional).
         :type assigned_to: list[User]
         """
+        messages = []
         if title is not None:
             self.title = title
+            message = f"Task title was changed to {self.title}."
+            messages.append(message)
         if description is not None:
             self.description = description
+            message = f"Task description was changed."
+            messages.append(message)
         if status is not None:
             self.status = status
+            message = f"Task status was changed to {self.status.title}."
+            messages.append(message)
         if order is not None:
             self.order = order
         if start_date is not None:
             self.start_date = start_date
+            message = f"Task start date was changed to {self.start_date}."
+            messages.append(message)
         if end_date is not None:
             self.end_date = end_date
+            message = f"Task end date was changed to {self.end_date}."
+            messages.append(message)
         if labels is not None:
-            self.labels.set(labels)
+            self.labels.set(labels, clear=True)
         if assigned_to is not None:
-            self.assigned_to.set(assigned_to)
+            new_assigned_to = [user for user in assigned_to if user not in list(self.assigned_to.all())]
+            deleted_assigned_to = [user for user in list(self.assigned_to.all()) if user not in assigned_to]
+            self.assigned_to.set(assigned_to, clear=True)
+            for user in new_assigned_to:
+                message = f"Task assined to {user.get_full_name()}."
+                messages.append(message)
+            for user in deleted_assigned_to:
+                message = f"{user.get_full_name()} removed from task assigness."
+                messages.append(message)
+
         self.save()
 
-        message = f"Task {self.title} was updated."
-        Activity.objects.create(task=self, doer=assigned_to[0], message=message)
+        for message in messages:
+            Activity.objects.create(task=self, doer=doer, message=message)
     
-    def delete(self):
-        """
-        Soft-deletes the Task object.
-        """
-        self.is_deleted = True
-        self.save()
-    
-        # Create an Activity object to log the deletion of the task
-        message = f"Task {self.title} was deleted."
-        Activity.objects.create(task=self, doer=self.assigned_to.first(), message=message)
 
 
     def get_comment(self):
@@ -362,6 +338,7 @@ class Task(BaseModel, SoftDeleteMixin):
         """
         return self.task_activity.all()
     
+    ##
     def get_assigned_users(self):
         """
         Returns the users assigned to the Task object.
