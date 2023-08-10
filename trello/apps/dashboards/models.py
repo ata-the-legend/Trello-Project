@@ -2,7 +2,6 @@ from django.conf import settings
 from django.db import models
 from trello.apps.core.models import BaseModel, SoftDeleteMixin
 from django.utils.translation import gettext as _
-from django.core.exceptions import ObjectDoesNotExist
 
 
 class WorkSpace(BaseModel, SoftDeleteMixin):
@@ -29,13 +28,31 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
     def work_space_members(self):
         return self.members.all() | WorkSpace.objects.filter(owner=self.owner)
 
-    def work_space_boards(self):
-        return Board.objects.filter(work_space=self)
+    # def work_space_boards(self):
+    #     return Board.objects.filter(work_space=self)
+    
+    def archive(self):
+        board_qs = self.work_space_boards.all()
+        list_qs = TaskList.objects.filter(board__in = board_qs)
+        task_qs = Task.objects.filter(status__in = list_qs)
+        task_qs.archive()
+        list_qs.archive()
+        board_qs.archive()
+        return super().archive()
+    
+    def restore(self):
+        board_qs = self.work_space_boards(manager = 'original_objects').all()
+        list_qs = TaskList.original_objects.filter(board__in = board_qs)
+        task_qs = Task.original_objects.filter(status__in = list_qs)
+        task_qs.restore()
+        list_qs.restore()
+        board_qs.restore()
+        return super().restore()
 
 
 class Board(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the board')
-    work_space = models.ForeignKey(WorkSpace, verbose_name=_("Workspace"), on_delete=models.CASCADE, help_text='work space of the board', related_name='board_work_spaces')
+    work_space = models.ForeignKey(WorkSpace, verbose_name=_("Workspace"), on_delete=models.CASCADE, help_text='work space of the board', related_name='work_space_boards')
     background_image = models.ImageField(_("Background image"), upload_to='uploads/backgrounds/', default='uploads/backgrounds/default_background.jpg')
 
     class Meta:
@@ -59,6 +76,20 @@ class Board(BaseModel, SoftDeleteMixin):
 
     def add_tasklist(self, title):
         return self.TaskList_set.create()
+    
+    def archive(self):
+        list_qs = self.board_Tasklists.all()
+        task_qs = Task.objects.filter(status__in = list_qs)
+        task_qs.archive()
+        list_qs.archive()
+        return super().archive()
+    
+    def restore(self):
+        list_qs = self.board_Tasklists(manager = 'original_objects').all()
+        task_qs = Task.original_objects.filter(status__in = list_qs)
+        task_qs.restore()
+        list_qs.restore()
+        return super().restore()
 
 
 class TaskList(BaseModel, SoftDeleteMixin):
@@ -87,6 +118,15 @@ class TaskList(BaseModel, SoftDeleteMixin):
     def change_tasklist(self, new_title):
         TaskList.objects.update(title=new_title, board=self.board)
 
+    def archive(self):
+        self.status_tasks.all().archive()
+        return super().archive()
+    
+    def restore(self):
+        self.status_tasks(manager = 'original_objects').all().restore()
+        return super().restore()
+    
+
 class Label(BaseModel):
     title = models.CharField(max_length=300, verbose_name=_('Title'), help_text='Title of the label')
     board = models.ForeignKey(Board, on_delete=models.CASCADE, verbose_name=_('Board'), help_text='Board associated with the label', related_name='board_labels')
@@ -98,6 +138,7 @@ class Label(BaseModel):
     def __str__(self):
         return self.title
     
+    @classmethod
     def create_label(cls, title, board,task,user):
         """
         Creates a new Label object with the given parameters.
@@ -109,7 +150,7 @@ class Label(BaseModel):
         :return: The created Label object.
         :rtype: Label
         """
-        label = cls.objects.create(title=title, board=board)
+        label = cls.objects.get_or_create(title=title, board=board)
         return label
     
     def delete(self, task=None, user=None):
