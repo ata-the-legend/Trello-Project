@@ -27,9 +27,6 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
 
     def work_space_members(self):
         return self.members.all() | settings.AUTH_USER_MODEL.objects.filter(owner=self.owner)
-
-    # def work_space_boards(self):
-    #     return Board.objects.filter(work_space=self)
     
     def archive(self):
         board_qs = self.work_space_boards.all()
@@ -77,6 +74,17 @@ class Board(BaseModel, SoftDeleteMixin):
         """
         return Label.objects.filter(board=self)
     
+
+    
+    def get_status_choices(self):
+        """
+        Returns a list of choices for the status field of a Task object.
+        
+        :return: A list of choices for the status field of a Task object.
+        :rtype: list[str]
+        """
+        return TaskList.objects.filter(board=self).values_list('title', flat=True)
+
     def archive(self):
         list_qs = self.board_Tasklists.all()
         task_qs = Task.objects.filter(status__in = list_qs)
@@ -226,10 +234,10 @@ class Task(BaseModel, SoftDeleteMixin):
         :param assigned_to: The users assigned to the task (optional).
         :type assigned_to: list[User]
         :return: The created Task object.
-        :rtype: Task
+        :type: Task
         """
 
-        order = status.task_count()+1
+        order = status.task_count() + 1
 
         task = cls.objects.create(
             title=title,
@@ -338,7 +346,6 @@ class Task(BaseModel, SoftDeleteMixin):
         """
         return self.task_activity.all()
     
-    ##
     def get_assigned_users(self):
         """
         Returns the users assigned to the Task object.
@@ -347,45 +354,27 @@ class Task(BaseModel, SoftDeleteMixin):
         :rtype: QuerySet[User]
         """
         return self.assigned_to.all()
-    
-    
-    def get_status_choices():
+
+    def get_task_comments_count(self):
         """
-        Returns a list of choices for the status field of a Task object.
+        Returns the count of comments on the given task.
         
-        :return: A list of choices for the status field of a Task object.
-        :rtype: list[str]
+        :param task: The task to count comments for.
+        :type task: Task
+        :return: The count of comments on the given task.
+        :rtype: int
         """
-        return TaskList.objects.values_list('title', flat=True)
+
+        return self.task_comments.all().count()
     
-    
-    def get_label_choices():
+    def get_task_comments(self):
         """
-        Returns a list of choices for the labels field of a Task object.
+        Returns the comments on the same task as the Comment object.
         
-        :return: A list of choices for the labels field of a Task object.
-        :rtype: list[str]
+        :return: The comments on the same task as the Comment object.
+        :rtype: QuerySet[Comment]
         """
-        return Label.objects.values_list('title',flat=True)
-    
-    
-    def get_start_date_choices():
-        """
-        Returns a list of choices for the start_date field of a Task object.
-        
-        :return: A list of choices for the start_date field of a Task object.
-        :rtype: list[datetime.datetime]
-        """
-        return Task.objects.exclude(start_date=None).values_list('start_date',flat=True).distinct()
-    
-    def get_end_date_choices():
-        """
-        Returns a list of choices for the end_date field of a Task object.
-        
-        :return: A list of choices for the end_date field of a Task object.
-        :rtype: list[datetime.datetime]
-        """
-        return Task.objects.exclude(end_date=None).values_list('end_date',flat=True).distinct()
+        return self.task_comments.all()
 
 
     
@@ -424,7 +413,7 @@ class Comment(BaseModel, SoftDeleteMixin):
         if parent:
             message = f"{author.get_full_name()} replied to a comment on task {task.title}."
         else:
-            message = f"{author.get_full_name()} added a new comment to task {task.title}."
+            message = f"{author.get_full_name()} added a new comment on task {task.title}."
     
         Activity.objects.create(task=task, doer=author, message=message)
     
@@ -443,32 +432,17 @@ class Comment(BaseModel, SoftDeleteMixin):
             message = f"{self.author.get_full_name()} updated a comment on task {self.task.title}."
             Activity.objects.create(task=self.task, doer=self.author, message=message)
 
-    def delete(self):
+    def archive(self):
         """
         Soft-deletes the Comment object.
         """
-        self.is_deleted = True
-        self.save()
-    
         # Create an Activity object to log the deletion of the comment
         message = f"{self.author.get_full_name()} deleted a comment on task {self.task.title}."
         Activity.objects.create(task=self.task, doer=self.author, message=message)
 
+        return super().archive()
+
     
-    def get_task_comment_count(task):
-        """
-        Returns the count of comments on the given task.
-        
-        :param task: The task to count comments for.
-        :type task: Task
-        :return: The count of comments on the given task.
-        :rtype: int
-        """
-
-        return Comment.objects.filter(task=task).count()
-
-
-
     def get_replies(self):
         """
         Returns the replies to the Comment object.
@@ -478,15 +452,6 @@ class Comment(BaseModel, SoftDeleteMixin):
         """
         return Comment.objects.filter(parent=self)
     
-    def get_task_comments(self):
-        """
-        Returns the comments on the same task as the Comment object.
-        
-        :return: The comments on the same task as the Comment object.
-        :rtype: QuerySet[Comment]
-        """
-        return Comment.objects.filter(task=self.task)
-    
     def get_author_comments(self):
         """
         Returns the comments by the same author as the Comment object.
@@ -494,7 +459,7 @@ class Comment(BaseModel, SoftDeleteMixin):
         :return: The comments by the same author as the Comment object.
         :rtype: QuerySet[Comment]
         """
-        return Comment.objects.filter(author=self.author)
+        return Comment.objects.filter(author=self.author, task__status__board=self.task.status.board)
     
 
 class Attachment(BaseModel , SoftDeleteMixin):
