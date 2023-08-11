@@ -44,7 +44,9 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
         return self._create_user(email, password, **extra_fields)
     
-
+    def get_queryset(self) -> QuerySet:
+        return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all().filter(is_active=True)
+    
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -159,4 +161,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.get_full_name()
     
-    
+
+
+class RecycleManager(UserManager):
+    def get_queryset(self):
+        return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all().filter(is_active=False)
+
+
+class UserRecycle(User):
+
+    objects = RecycleManager()
+
+    class Meta:
+        verbose_name = _("UserRecycle")
+        verbose_name_plural = _("UsersRecycle")
+        proxy = True
+
