@@ -1,8 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-
-# from trello.apps.accounts.forms import CustomUserCreationForm
 from .models import User, UserRecycle
 
 @admin.register(User)
@@ -37,8 +35,6 @@ class AppUserAdmin(UserAdmin):
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
     search_fields = ("mobile", "first_name", "last_name", "email")
     ordering = ("email",)
-
-    # add_form = CustomUserCreationForm
 
     actions = ['archive']
     @admin.action(description='Archive Selected Users')

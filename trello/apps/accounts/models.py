@@ -1,5 +1,6 @@
 from uuid import uuid4
 from django.db.models.query import QuerySet
+from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
@@ -48,6 +49,10 @@ class UserManager(BaseUserManager):
         return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all().filter(is_active=True)
     
 
+class HardManager(UserManager):
+    def get_queryset(self):
+        return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all()
+
 
 class User(AbstractBaseUser, PermissionsMixin):
 
@@ -94,6 +99,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     objects = UserManager()
+    original_objects = HardManager()
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"
@@ -104,6 +110,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _("users")
 
     def clean(self):
+        if (
+            User.original_objects.filter(email=self.email).exists()
+        ):
+            raise ValidationError(
+                    message={
+                        "email": _("A user with that email already exists."),
+                    }
+                )
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
 
