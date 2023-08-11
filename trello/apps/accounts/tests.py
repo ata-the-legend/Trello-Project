@@ -1,5 +1,6 @@
+from django.forms import ValidationError
 from django.test import TestCase
-from .models import User
+from .models import User, UserRecycle
 from trello.apps.dashboards.models import *
 from django.core import mail
 from django.utils import timezone
@@ -59,8 +60,15 @@ class UserTestCase(TestCase):
         # print(self.user_ata.email)
         user = User.objects.create(email='test@gmail.COM', password='1234', first_name='test', last_name='test', avatar=None, mobile='01234567891')
         self.assertEqual(user.email, 'test@gmail.COM')
+
+        # this will raise error because email has been saved in db (unique email error)
+        with self.assertRaises(ValidationError):
+            user.clean()
+
+        # this wont raise error because email did not save in db after change (unique email error)
+        user.email='testtest@gmail.COM'
         user.clean()
-        self.assertEqual(user.email, 'test@gmail.com')
+        self.assertEqual(user.email, 'testtest@gmail.com')
 
     def test_get_short_name(self):
         self.assertEqual(self.user_ata.get_short_name(), 'ata')
@@ -141,3 +149,17 @@ class UserTestCase(TestCase):
 
         # Verify that the subject of the first message is correct.
         self.assertEqual(mail.outbox[0].subject, "Subject")
+
+
+class UserRecycleTestCase(TestCase):
+
+    def setUp(self) -> None:
+        self.user_ata = User.objects.create_user(email='ata@gmail.COM', password='1234', first_name='ata', last_name='test', avatar=None, mobile='01234567890')
+        self.user_ali = User.objects.create_user(email='ali@gmail.COM', password='1234', first_name='ali', last_name='test', mobile='01234567893')
+        return super().setUp()
+
+    def test_recycle_manager(self):
+        self.assertCountEqual(UserRecycle.objects.all(), [])
+        self.user_ata.archive()
+        self.assertCountEqual(UserRecycle.objects.all(), [self.user_ata])
+        
