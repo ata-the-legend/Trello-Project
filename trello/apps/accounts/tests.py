@@ -2,7 +2,9 @@ from django.test import TestCase
 from .models import User
 from trello.apps.dashboards.models import *
 from django.core import mail
+from django.utils import timezone
 # Create your tests here.
+
 
 class UserTestCase(TestCase):
     
@@ -88,11 +90,23 @@ class UserTestCase(TestCase):
         self.assertCountEqual(self.user_ata.tasked_boards(), [self.board_ata_1_1])
 
     def test_active_tasks(self):
-        self.task_4.is_active = False
-        self.task_4.save()
-        # print(self.user_ali.active_tasks())
+        self.task_4.archive()
         self.assertCountEqual(self.user_ali.active_tasks(), [self.task_1, self.task_3])
         self.assertCountEqual(self.user_ata.active_tasks(), [self.task_1, self.task_2])
+        self.task_4.restore()
+        self.board_ata_1_1.archive()
+        self.assertCountEqual(self.user_ali.active_tasks(), [self.task_4])
+        self.assertCountEqual(self.user_ata.active_tasks(), [])
+        self.board_ata_1_1.restore()
+        self.assertCountEqual(self.user_ata.active_tasks(), [self.task_1, self.task_2])
+
+    def test_tasks_has_deadline(self):
+        self.task_1.end_date= timezone.now() - timezone.timedelta(minutes=10)
+        self.task_1.save()
+        self.assertCountEqual(self.user_ata.tasks_has_deadline(), [self.task_2])
+        self.task_1.end_date= timezone.now() + timezone.timedelta(minutes=10)
+        self.task_1.save()
+        self.assertCountEqual(self.user_ata.tasks_has_deadline(), [self.task_1, self.task_2])
 
     def test_activities_on_board(self):
         self.assertCountEqual(self.user_ali.activities_on_board(self.board_ata_1_1), [self.activity_1_2, self.activity_3_1, self.activity_3_2, self.activity_3_3])
