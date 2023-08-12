@@ -63,6 +63,15 @@ class TaskAdmin(admin.ModelAdmin):
         search_fields = ('body',)
         ordering = ('task',)
 
-        
+
+    @admin.register(Label)
+    class LabelAdmin(admin.ModelAdmin):
+        fieldsets = (
+            (None,{'fields': ('title', 'board')}),
+        )
+        list_display = ('title','board')
+        list_filter = ('board')
+        search_fields = ('title',)
+        ordering = ('board',)
 
 
