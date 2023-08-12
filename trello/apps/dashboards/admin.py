@@ -70,7 +70,7 @@ class TaskAdmin(admin.ModelAdmin):
             (None,{'fields': ('title', 'board')}),
         )
         list_display = ('title','board')
-        list_filter = ('board')
+        list_filter = ('board',)
         search_fields = ('title',)
         ordering = ('board',)
 
