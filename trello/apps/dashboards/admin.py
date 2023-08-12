@@ -1,4 +1,7 @@
+from typing import Any, Optional
 from django.contrib import admin
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
 from django.utils.translation import gettext_lazy as _ 
 from .models import Task, Comment, Label
 
@@ -17,5 +20,49 @@ class TaskAdmin(admin.ModelAdmin):
     list_filter = ('status', 'labels','assigned_to')
     search_fields = ('title',)
     ordering = ('status', 'order')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return
+        qs.filter(assigned_to=request.user)
+
+    def has_view_permission(self, request, obj = None):
+        if not obj:
+            return True
+        if request.user.is_superuser:
+            return True
+        return obj.assigned_to.filter(pk=request.user.pk).exists()
     
+
+    def has_change_permission(self, request, obj = None):
+        if not obj:
+            return True
+        if request.user.is_superuser:
+            return True
+        return obj.assigned_to.filter(pk=request.user.pk).exists()
+    
+
+    def has_delete_permission(self, request, obj = None):
+        if not obj:
+            return True
+        if request.user.is_superuser:
+            return True
+        return obj.assigned_to.filter(pk=request.user.pk).exists()
+    
+
+    @admin.register(Comment)
+    class CommentAdmin(admin.ModelAdmin):
+        fieldsets = (
+            (None, {'fields':('body','task','author')}),
+            (_('Permissions'),{'fields':('is_active',)}),
+        )
+        list_display = ('body', 'task', 'author')
+        list_filter = ('task',)
+        search_fields = ('body',)
+        ordering = ('task',)
+
+        
+
 
