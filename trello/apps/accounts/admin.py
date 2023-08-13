@@ -2,6 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import User, UserRecycle
+from .forms import CustomUserCreationForm
 
 @admin.register(User)
 class AppUserAdmin(UserAdmin):
@@ -28,7 +29,7 @@ class AppUserAdmin(UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "password1", "password2"),
+                "fields": ("email", "password1", "password2", 'mobile'),
             },
         ),
     )
@@ -36,6 +37,7 @@ class AppUserAdmin(UserAdmin):
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
     search_fields = ("mobile", "first_name", "last_name", "email")
     ordering = ("email",)
+    add_form = CustomUserCreationForm
 
     actions = ['archive']
     @admin.action(description='Archive Selected Users')

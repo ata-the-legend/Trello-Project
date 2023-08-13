@@ -117,17 +117,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
 
-    def validate_unique(self, exclude=None):
-        if (
-            User.original_objects.filter(email=self.email).exists()
-        ):
-            raise ValidationError(
-                    message={
-                        "email": _("A user with that email already exists."),
-                    }
-                )
-        super().validate_unique(exclude=None)
-
     def get_full_name(self):
         """
         Return the first_name plus the last_name, with a space in between.
