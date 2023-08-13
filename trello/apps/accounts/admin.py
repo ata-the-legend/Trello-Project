@@ -44,8 +44,7 @@ class AppUserAdmin(UserAdmin):
 
 
 @admin.register(UserRecycle)
-class UserRecycleAdmin(admin.ModelAdmin):
-    list_display = ("email", "first_name", "last_name", "mobile", "is_staff")
+class UserRecycleAdmin(AppUserAdmin):
     actions = ['restore']
 
     @admin.action(description='Restore Selected Users')
