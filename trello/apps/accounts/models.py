@@ -110,6 +110,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _("users")
 
     def clean(self):
+        super().clean()
+        self.email = self.__class__.objects.normalize_email(self.email)
+
+    def validate_unique(self, exclude=None):
         if (
             User.original_objects.filter(email=self.email).exists()
         ):
@@ -118,8 +122,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                         "email": _("A user with that email already exists."),
                     }
                 )
-        super().clean()
-        self.email = self.__class__.objects.normalize_email(self.email)
+        super().validate_unique(exclude=None)
 
     def get_full_name(self):
         """
