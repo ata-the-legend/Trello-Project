@@ -20,6 +20,9 @@ class AppUserAdmin(UserAdmin):
                     "groups",
                     "user_permissions",
                 ),
+                "classes": (
+                    "collapse",
+                )
             },
         ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
@@ -34,7 +37,7 @@ class AppUserAdmin(UserAdmin):
         ),
     )
     list_display = ('avatar_tag', "email", "first_name", "last_name", "mobile", "is_staff")
-    list_filter = ("is_staff", "is_superuser", "is_active", "groups")
+    list_filter = ("is_staff", "is_superuser", "is_active", "groups", "date_joined")
     search_fields = ("mobile", "first_name", "last_name", "email")
     ordering = ("email",)
     add_form = CustomUserCreationForm
