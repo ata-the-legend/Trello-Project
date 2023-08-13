@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from trello.apps.core.models import SoftQuerySet
 from trello.apps.dashboards.models import Board
+from django.utils.html import mark_safe
 
 
 class UserManager(BaseUserManager):
@@ -108,6 +109,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = _("user")
         verbose_name_plural = _("users")
+
+    def avatar_tag(self):
+        return mark_safe('<img src="%s" width="50" height="50" />' % self.avatar.url)
 
     def clean(self):
         super().clean()

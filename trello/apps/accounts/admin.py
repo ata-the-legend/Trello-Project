@@ -5,9 +5,10 @@ from .models import User, UserRecycle
 
 @admin.register(User)
 class AppUserAdmin(UserAdmin):
+    readonly_fields = ['avatar_tag'] 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name", "mobile")}),
+        (_("Personal info"), {"fields": ("avatar_tag", "first_name", "last_name", "mobile", )}),
         (
             _("Permissions"),
             {
@@ -31,7 +32,7 @@ class AppUserAdmin(UserAdmin):
             },
         ),
     )
-    list_display = ("email", "first_name", "last_name", "mobile", "is_staff")
+    list_display = ('avatar_tag', "email", "first_name", "last_name", "mobile", "is_staff")
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
     search_fields = ("mobile", "first_name", "last_name", "email")
     ordering = ("email",)
