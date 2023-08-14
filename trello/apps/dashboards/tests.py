@@ -1,82 +1,237 @@
+from django.utils import timezone
+from datetime import datetime
 from django.test import TestCase
-from trello.apps.dashboards.models import Label, Board, Task, Activity,TaskList,Comment
-from trello.apps.accounts.models import User
+from django.contrib.auth import get_user_model
+from trello.apps.dashboards.models import Label, Board ,WorkSpace,Task,TaskList ,Comment , Activity,Attachment
+
+
+User = get_user_model()
 
 class LabelTestCase(TestCase):
     def setUp(self):
-        self.board = Board.objects.create(title="Test Board")
-        self.task = Task.objects.create(title="Test Task", status=self.board)
-        self.user = User.objects.create(email="test@example.com", password="password")
+        self.test_user = User.objects.create_user(password="testpassword", email="testuser@example.com")
+        self.test_workspace = WorkSpace.objects.create(title="Test Workspace", owner=self.test_user)
+        self.test_board = Board.objects.create(title="Test Board", work_space=self.test_workspace)
+        
 
     def test_create_label(self):
-        label = Label.create_label("Test Label", self.board, self.task, self.user)
-        self.assertEqual(label.title, "Test Label")
-        self.assertEqual(label.board, self.board)
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"{self.user.get_full_name()} created a new label Test Label on task {self.task.title}.")
+        label_title = "Test Label"
+        label = Label.create_label(title=label_title, board=self.test_board)
+        
+        
+        self.assertIsInstance(label, Label)
+        
+        self.assertEqual(label.title, label_title)
+        self.assertEqual(label.board, self.test_board)
+        
+        saved_label = Label.objects.get(title=label_title, board=self.test_board)
+        self.assertEqual(label, saved_label)
 
-    def test_delete_label(self):
-        label = Label.create_label("Test Label", self.board, self.task, self.user)
-        label.delete(self.task, self.user)
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"{self.user.get_full_name()} deleted the label Test Label on task {self.task.title}.")
+    def test_get_label_choices(self):
+        label_titles = ["Label 1", "Label 2", "Label 3"]
+        for title in label_titles:
+            Label.create_label(title=title, board=self.test_board)
 
-    def test_update_label(self):
-        label = Label.create_label("Test Label", self.board, self.task, self.user)
-        label.update_label("Updated Label", self.task, self.user)
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"{self.user.get_full_name()} updated the label Updated Label on task {self.task.title}.")
+        label_choices = Label.get_label_choices()
 
-class TaskTestCase(TestCase):
-    def setUp(self):
-        self.tasklist = TaskList.objects.create(title="Test TaskList")
-        self.user = User.objects.create(email="test@example.com", password="password")
-        self.label = Label.objects.create(title="Test Label", board=self.tasklist.board)
+        self.assertEqual(len(label_choices), len(label_titles))
+        for label_title in label_titles:
+            self.assertIn(label_title, label_choices)
 
-    def test_create_task(self):
-        task = Task.create_task("Test Task", "Test Description", self.tasklist, 1, [self.label], assigned_to=[self.user])
-        self.assertEqual(task.title, "Test Task")
-        self.assertEqual(task.description, "Test Description")
-        self.assertEqual(task.status, self.tasklist)
-        self.assertEqual(task.order, 1)
-        self.assertListEqual(list(task.labels.all()), [self.label])
-        self.assertListEqual(list(task.assigned_to.all()), [self.user])
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"A new task Test Task was created.")
+    def test_get_tasks(self):
+        label_title = "Test Label"
+        label = Label.create_label(title=label_title, board=self.test_board)
 
-    def test_update_task(self):
-        task = Task.create_task("Test Task", "Test Description", self.tasklist, 1, [self.label], assigned_to=[self.user])
-        task.update_task("Updated Task", "Updated Description", order=2)
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"Task Updated Task was updated.")
+        task_titles = ["Task 1", "Task 2", "Task 3"]
+        tasks = []
+        for title in task_titles:
+            task_list = TaskList.objects.create(title="Test TaskList", board=self.test_board)
+            task = Task.objects.create(title=title, description="Test description", status=task_list)
+            task.labels.add(label)
+            tasks.append(task)
+        label_tasks = label.get_tasks()
+        self.assertEqual(len(label_tasks), len(task_titles))
+        for task_title in task_titles:
+            self.assertTrue(any(task.title == task_title for task in label_tasks))
 
-    def test_delete_task(self):
-        task = Task.create_task("Test Task", "Test Description", self.tasklist, 1, [self.label], assigned_to=[self.user])
-        task.delete()
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"Task Test Task was deleted.")
+
+    def test_get_task_count(self):
+        label_title = "Test Label"
+        label = Label.create_label(title=label_title, board=self.test_board)
+        task_titles = ["Task 1", "Task 2", "Task 3"]
+        for title in task_titles:
+            task_list = TaskList.objects.create(title="Test TaskList", board=self.test_board)
+            task = Task.objects.create(title=title, description="Test description", status=task_list)
+            task.labels.add(label)
+        task_count = label.get_task_count()
+        self.assertEqual(task_count, len(task_titles))
+
+
 
 class CommentTestCase(TestCase):
     def setUp(self):
-        self.task = Task.objects.create(title="Test Task")
-        self.user = User.objects.create(email="test@example.com", password="password")
+        self.user = User.objects.create_user(email="testuser@example.com", password='testpassword')
+        self.work_space = WorkSpace.objects.create(title='Test Workspace', owner=self.user)
+        self.board = Board.objects.create(title='Test Board', work_space=self.work_space)
+        self.task_list = TaskList.objects.create(title='Test Task List', board=self.board)
+        self.task = Task.objects.create(title='Test Task', status=self.task_list)
+        self.comment = Comment.objects.create(body='Test Comment', task=self.task, author=self.user)
+
 
     def test_create_comment(self):
-        comment = Comment.create_comment("Test Comment", self.task, self.user)
-        self.assertEqual(comment.body, "Test Comment")
-        self.assertEqual(comment.task, self.task)
-        self.assertEqual(comment.author, self.user)
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"{self.user.get_full_name()} added a new comment to task {self.task.title}.")
+        comment_body = "This is a test comment"
+        comment = Comment.create_comment(body=comment_body, task=self.task, author=self.user)
+        retrieved_comment = Comment.objects.get(id=comment.id)
+        self.assertEqual(retrieved_comment.body, comment_body)
+        self.assertEqual(retrieved_comment.task, self.task)
+        self.assertEqual(retrieved_comment.author, self.user)
+
+
+
+    def test_archive(self):
+        self.comment.archive()
+        self.assertFalse(self.comment.is_active)
+        self.assertEqual(self.comment.task.task_activity.count(), 1)
+        activity = self.comment.task.task_activity.first()
+        self.assertEqual(activity.doer, self.user)
+        self.assertIn("deleted a comment", activity.message)
+
+
+    def test_get_replies(self):
+        reply1 = Comment.objects.create(body='Test Reply 1', task=self.task, author=self.user, parent=self.comment)
+        reply2 = Comment.objects.create(body='Test Reply 2', task=self.task, author=self.user, parent=self.comment)
+        replies = self.comment.get_replies()
+        self.assertCountEqual(replies, [reply1, reply2])
+
+
+    def test_get_author_comments(self):
+        comment1 = Comment.objects.create(body='Test Comment 1', task=self.task, author=self.user)
+        comment2 = Comment.objects.create(body='Test Comment 2', task=self.task, author=self.user)
+        author_comments = self.comment.get_author_comments()
+        self.assertCountEqual(author_comments, [self.comment, comment1, comment2])
+
 
     def test_update_comment(self):
-        comment = Comment.create_comment("Test Comment", self.task, self.user)
-        comment.update_comment("Updated Comment")
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"{self.user.get_full_name()} updated a comment on task {self.task.title}.")
+        initial_body = "Initial comment body."
+        comment = Comment.objects.create(
+            body=initial_body,
+            task=self.task,
+            author=self.user,
+            parent=None
+        )
 
-    def test_delete_comment(self):
-        comment = Comment.create_comment("Test Comment", self.task, self.user)
-        comment.delete()
-        activity = Activity.objects.last()
-        self.assertEqual(activity.message, f"{self.user.get_full_name()} deleted a comment on task {self.task.title}.")
+        new_body = "Updated comment body."
+
+        comment.update_comment(body=new_body)
+        comment.refresh_from_db()
+        self.assertEqual(comment.body, new_body)
+        activity_logs = comment.task.task_activity.all()
+        self.assertEqual(activity_logs.count(), 1)
+        update_activity = activity_logs.latest('create_at')
+        self.assertEqual(update_activity.doer, self.user)
+        self.assertIn("updated a comment", update_activity.message)
+
+
+class TaskTestCase(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create(email="user1@example.com")
+        self.user2 = User.objects.create(email="user2@example.com")
+        self.owner = User.objects.create(email="owner@example.com")
+        self.work_space = WorkSpace.objects.create(title="Test WorkSpace", owner=self.owner)
+        self.board = Board.objects.create(title="Test Board", work_space=self.work_space)
+        self.task_list = TaskList.objects.create(title="Test Task List", board=self.board)
+        self.label1 = Label.objects.create(title="Label 1", board=self.board)
+        self.label2 = Label.objects.create(title="Label 2", board=self.board)
+        self.task = Task.objects.create(
+            title="Test Task",
+            description="Test Description",
+            status=self.task_list,
+        )
+        
+        self.comment1 = Comment.objects.create(body="Comment 1", task=self.task, author=self.user1)
+        self.comment2 = Comment.objects.create(body="Comment 2", task=self.task, author=self.user2)
+
+
+
+    def test_create_task(self):
+        task = Task.create_task(
+            title="Test Task",
+            doer=self.owner,
+            description="Test Description",
+            status=self.task_list,
+            labels=[self.label1, self.label2],
+            start_date=datetime.strptime("2023-01-01", "%Y-%m-%d"),  # Convert to datetime
+            end_date=datetime.strptime("2023-12-31", "%Y-%m-%d"),    # Convert to datetime
+            assigned_to=[self.user1, self.user2]
+        )
+        self.assertEqual(task.start_date.strftime('%Y-%m-%d'), "2023-01-01")
+        self.assertEqual(task.end_date.strftime('%Y-%m-%d'), "2023-12-31")
+        self.assertEqual(task.title, "Test Task")
+        self.assertEqual(task.description, "Test Description")
+        self.assertEqual(task.status, self.task_list)
+        self.assertCountEqual(task.labels.all(), [self.label1, self.label2])
+        self.assertCountEqual(task.assigned_to.all(), [self.user1, self.user2])
+
+
+
+    def test_update_task(self):
+        task = Task.objects.create(
+            title="Test Task",
+            description="Test Description",
+            status=self.task_list,
+        )
+        
+        task.update_task(
+            title="Updated Task",
+            doer = self.owner,
+            description="Updated Description",
+            status=self.task_list,
+            labels=[self.label1, self.label2],
+            start_date="2023-01-01",
+            end_date="2023-12-31",
+            assigned_to=[self.user1, self.user2]
+        )
+        
+        task.refresh_from_db()
+        
+        self.assertEqual(task.title, "Updated Task")
+        self.assertEqual(task.description, "Updated Description")
+        self.assertEqual(task.status, self.task_list)
+        self.assertCountEqual(task.labels.all(), [self.label1, self.label2])
+        self.assertEqual(task.start_date.strftime('%Y-%m-%d'), "2023-01-01")
+        self.assertEqual(task.end_date.strftime('%Y-%m-%d'), "2023-12-31")
+        self.assertCountEqual(task.assigned_to.all(), [self.user1, self.user2])
+
+
+    def test_get_comment(self):
+        comments = self.task.get_comment()
+        self.assertCountEqual(comments, [self.comment1, self.comment2])
+
+
+    def test_get_attachments(self):
+        attachment1 = Attachment.objects.create(file="attachment1.txt", task=self.task, owner=self.user1)
+        attachment2 = Attachment.objects.create(file="attachment2.txt", task=self.task, owner=self.user2)
+        attachments = self.task.get_attachments()
+        self.assertCountEqual(attachments, [attachment1, attachment2])
+
+    def test_get_activity(self):
+        activity1 = Activity.objects.create(doer=self.user1, task=self.task, message="Activity 1")
+        activity2 = Activity.objects.create(doer=self.user2, task=self.task, message="Activity 2")
+        activities = self.task.get_activity()
+        self.assertCountEqual(activities, [activity1, activity2])
+
+    def test_get_assigned_users(self):
+        user3 = User.objects.create(email="user3@example.com")
+        user4 = User.objects.create(email="user4@example.com")
+        self.task.assigned_to.add(self.user1, self.user2, user3)
+        assigned_users = self.task.get_assigned_users()
+        self.assertCountEqual(assigned_users, [self.user1, self.user2, user3])
+
+
+    def test_get_task_comments(self):
+        comments = self.task.get_task_comments()
+        self.assertCountEqual(comments, [self.comment1, self.comment2])
+
+    def test_get_task_comments_count(self):
+        comment_count = self.task.get_task_comments_count()
+        self.assertEqual(comment_count, 2)

@@ -158,7 +158,7 @@ class Label(BaseModel):
         :return: The created Label object.
         :rtype: Label
         """
-        label = cls.objects.get_or_create(title=title, board=board)
+        label = cls.objects.create(title=title, board=board)
         return label
     
 
@@ -213,7 +213,7 @@ class Task(BaseModel, SoftDeleteMixin):
         return f'Task {self.title}'
     
     @classmethod
-    def create_task(cls, title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
+    def create_task(cls, doer,title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
         """
         Creates a new Task object with the given parameters.
         
@@ -252,7 +252,7 @@ class Task(BaseModel, SoftDeleteMixin):
         if assigned_to:
             task.assigned_to.set(assigned_to)
         message = f"A new task {title} was created."
-        Activity.objects.create(task=task, doer=assigned_to[0], message=message)
+        Activity.objects.create(task=task, doer=doer, message=message)
         return task
     
     def update_task(self, doer, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
@@ -375,6 +375,8 @@ class Task(BaseModel, SoftDeleteMixin):
         :rtype: QuerySet[Comment]
         """
         return self.task_comments.all()
+    
+    
 
 
     
@@ -392,6 +394,7 @@ class Comment(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'Comment by {self.author} on task {self.task}'
     
+    @classmethod
     def create_comment(cls, body, task, author, parent=None):
         """
         Creates a new Comment object with the given parameters.
@@ -427,8 +430,9 @@ class Comment(BaseModel, SoftDeleteMixin):
         :type body: str
         """
         if body is not None:
+            old_body = self.body
             self.body = body
-            self.save
+            self.save()
             message = f"{self.author.get_full_name()} updated a comment on task {self.task.title}."
             Activity.objects.create(task=self.task, doer=self.author, message=message)
 
