@@ -9,7 +9,7 @@ class AppUserAdmin(UserAdmin):
     readonly_fields = ['avatar_tag'] 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        (_("Personal info"), {"fields": ("avatar_tag", "first_name", "last_name", "mobile", )}),
+        (_("Personal info"), {"fields": (("avatar_tag", 'avatar'), "first_name", "last_name", "mobile", )}),
         (
             _("Permissions"),
             {
@@ -37,7 +37,7 @@ class AppUserAdmin(UserAdmin):
         ),
     )
     list_display = ('avatar_tag', "email", "first_name", "last_name", "mobile", "is_staff")
-    list_filter = ("is_staff", "is_superuser", "is_active", "groups", "date_joined")
+    list_filter = ("is_staff", "is_superuser", "groups", "date_joined")
     search_fields = ("mobile", "first_name", "last_name", "email")
     ordering = ("email",)
     add_form = CustomUserCreationForm

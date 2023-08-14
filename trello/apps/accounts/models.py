@@ -169,7 +169,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                   | User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('owner'))
         
     def __str__(self):
-        return self.get_full_name()
+        return self.get_full_name() if self.get_full_name() != '' else self.email
     
 
 
