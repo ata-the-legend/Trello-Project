@@ -1,77 +1,67 @@
-from typing import Any, Optional
 from django.contrib import admin
-from django.db.models.query import QuerySet
-from django.http.request import HttpRequest
-from django.utils.translation import gettext_lazy as _ 
-from .models import Task, Comment, Label
+from .models import Task, Comment, Label,Activity,Attachment
+
+    
+class ActivityInLine(admin.TabularInline):
+    model = Activity
+    readonly_fields = ['doer', 'message','task']
+    can_delete = False
+    max_num = 0
 
 
-class CommentInLine(admin.TabularInline):
-    model = Comment
-    extra = 1
+class AttachmentInLine(admin.TabularInline):
+    model = Attachment
 
-@admin.register(Task)
+
 class TaskAdmin(admin.ModelAdmin):
     fieldsets = (
-        (None, {'fields':('title','description', 'status', 'order', 'labels','start_date', 'end_date', 'assigned_to')}),(_('Permissions'),{'fields':('is_active',)}),
+        (None, {'fields': ('title', 'description', 'status')}),
+        ('Dates', {'fields': ('start_date', 'end_date')}),
+        ('Relations', {'fields': ('labels', 'assigned_to')}),
     )
-    inlines = [CommentInLine]
-    list_display = ('title','status','order','start_date','end_date')
-    list_filter = ('status', 'labels','assigned_to')
+    inlines = [ActivityInLine, AttachmentInLine]
+    list_display = ('title', 'status', 'start_date', 'end_date')
+    list_filter = ('status', 'labels', 'assigned_to', 'start_date', 'end_date')
+    search_fields = ('title', 'description')
+    ordering = ('status', 'start_date')
+    actions = ['archive_tasks']
+
+admin.site.register(Task, TaskAdmin)
+    
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('body', 'task', 'author')}),
+        ('Status', {'fields': ('is_active',)}),
+    )
+    list_display = ('body', 'task', 'author')
+    list_filter = ('task','author')
+    search_fields = ('body',)
+    ordering = ('task',)
+
+@admin.register(Label)
+class LabelAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('title', 'board')}),
+    )
+    list_display = ('title', 'board')
+    list_filter = ('board',)
     search_fields = ('title',)
-    ordering = ('status', 'order')
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return
-        qs.filter(assigned_to=request.user)
-
-    def has_view_permission(self, request, obj = None):
-        if not obj:
-            return True
-        if request.user.is_superuser:
-            return True
-        return obj.assigned_to.filter(pk=request.user.pk).exists()
-    
-
-    def has_change_permission(self, request, obj = None):
-        if not obj:
-            return True
-        if request.user.is_superuser:
-            return True
-        return obj.assigned_to.filter(pk=request.user.pk).exists()
-    
-
-    def has_delete_permission(self, request, obj = None):
-        if not obj:
-            return True
-        if request.user.is_superuser:
-            return True
-        return obj.assigned_to.filter(pk=request.user.pk).exists()
-    
-
-    @admin.register(Comment)
-    class CommentAdmin(admin.ModelAdmin):
-        fieldsets = (
-            (None, {'fields':('body','task','author')}),
-            (_('Permissions'),{'fields':('is_active',)}),
-        )
-        list_display = ('body', 'task', 'author')
-        list_filter = ('task',)
-        search_fields = ('body',)
-        ordering = ('task',)
+    ordering = ('board',)
 
 
-    @admin.register(Label)
-    class LabelAdmin(admin.ModelAdmin):
-        fieldsets = (
-            (None,{'fields': ('title', 'board')}),
-        )
-        list_display = ('title','board')
-        list_filter = ('board',)
-        search_fields = ('title',)
-        ordering = ('board',)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
