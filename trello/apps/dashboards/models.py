@@ -213,7 +213,7 @@ class Task(BaseModel, SoftDeleteMixin):
         return f'Task {self.title}'
     
     @classmethod
-    def create_task(cls, title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
+    def create_task(cls, doer, title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
         """
         Creates a new Task object with the given parameters.
         
@@ -252,7 +252,7 @@ class Task(BaseModel, SoftDeleteMixin):
         if assigned_to:
             task.assigned_to.set(assigned_to)
         message = f"A new task {title} was created."
-        Activity.objects.create(task=task, doer=assigned_to[0], message=message)
+        Activity.objects.create(task=task, doer=doer, message=message)
         return task
     
     def update_task(self, doer, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
@@ -473,10 +473,20 @@ class Attachment(BaseModel , SoftDeleteMixin):
         message = f"{owner.get_full_name()} attached a new file."
         Activity.objects.create(task= task, doer=owner, message = message)
         return attachment
+    
+    def archive(self):
+        """
+        Soft-deletes the Comment object.
+        """
+        # Create an Activity object to log the deletion of the comment
+        message = f"{self.owner.get_full_name()} deleted a attachment on task {self.task.title}."
+        Activity.objects.create(task=self.task, doer=self.owner, message=message)
+
+        return super().archive()
 
 
     def owner_other_attachments_on_board(self):
-        return self.objects.filter(owner= self.owner, task__status__board__in= self.task.status.board)
+        return Attachment.objects.filter(owner= self.owner, task__status__board = self.task.status.board)
 
     class Meta:
         verbose_name = _('Attachment')
@@ -484,7 +494,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
 
     def __str__(self):
-        return f"Attached by {self.owner.name}."
+        return f"Attached by {self.owner.get_full_name()}."
 
 
 class Activity(BaseModel):
@@ -495,15 +505,15 @@ class Activity(BaseModel):
     
     @classmethod
     def attachment_activity_on_board(cls, board: Board):
-        return cls.objects.filter(task__status__board__in= board, message__contains='attached')
+        return cls.objects.filter(task__status__board= board, message__contains='attached')
 
     @classmethod
     def task_create_activity_on_board(cls, board: Board):
-        return cls.objects.filter(task__status__board__in= board, message__contains='new task')
+        return cls.objects.filter(task__status__board= board, message__contains='new task')
 
     @classmethod
     def from_to_date_on_board(cls, from_date, to_date, board: Board):
-        return cls.objects.filter(task__status__board__in= board, update_at__gt=from_date, update_at__lge=to_date)
+        return cls.objects.filter(task__status__board= board, create_at__gt=from_date, create_at__lte=to_date)
 
     def doer_other_activitys_on_board(self):
         return self.doer.activities_on_board(self.task.status.board)
@@ -515,4 +525,4 @@ class Activity(BaseModel):
 
 
     def __str__(self):
-        return f'{self.update_at} - {self.message}'
+        return f'{self.create_at} - {self.message}'
