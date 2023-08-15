@@ -23,3 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+admin.site.index_title = "Trello Project"
+admin.site.site_header = "Trello Admin"
+admin.site.site_title = "Trello Admin Panel"
+

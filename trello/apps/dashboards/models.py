@@ -253,7 +253,6 @@ class Task(BaseModel, SoftDeleteMixin):
             task.assigned_to.set(assigned_to)
         message = f"A new task {title} was created."
         Activity.objects.create(task=task, doer=doer, message=message)
-        return task
     
     def update_task(self, doer, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
         """
@@ -487,6 +486,10 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
     def owner_other_attachments_on_board(self):
         return Attachment.objects.filter(owner= self.owner, task__status__board = self.task.status.board)
+
+
+    def owner_other_attachments_on_board(self):
+        return self.objects.filter(owner= self.owner, task__status__board__in= self.task.status.board)
 
     class Meta:
         verbose_name = _('Attachment')
