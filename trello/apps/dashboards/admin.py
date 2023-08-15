@@ -7,9 +7,9 @@ class AttachmentAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {'fields': ('file', 'task', 'owner')}),
     )
-    list_display = ('file', 'task', 'owner')
-    list_filter = ('task',)
-    search_fields = ('file',)
+    list_display = ('owner', 'task', 'file')
+    list_filter = ('is_active',)
+    search_fields = ('task','owner')
     ordering = ('task',)
 
 
@@ -17,10 +17,7 @@ class AttachmentAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    fieldsets = (
-        (None, {'fields': ('doer', 'message', 'task')}),
-    )
-    list_display = ('doer', 'message', 'task')
-    list_filter = ('task',)
-    search_fields = ('message',)
+    list_display = ('doer', 'task', 'message')
+    list_filter = ('message',)
+    search_fields = ('doer', 'task',)
     ordering = ('task',)
