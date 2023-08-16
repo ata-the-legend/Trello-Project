@@ -430,7 +430,6 @@ class Comment(BaseModel, SoftDeleteMixin):
         :type body: str
         """
         if body is not None:
-            old_body = self.body
             self.body = body
             self.save()
             message = f"{self.author.get_full_name()} updated a comment on task {self.task.title}."
