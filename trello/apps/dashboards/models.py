@@ -20,14 +20,16 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
 
     def add_member(self, member):
         self.members.add(member)
+        return self
 
     def add_board(self, title, background_image):
         if background_image is None:
-            return Board.objects.create(title=title, work_space=self)
-        return Board.objects.create(title=title, work_space=self, background_image=background_image)
-
+            Board.objects.create(title=title, work_space=self)
+            return self.work_space_boards.filter(title=title)
+        Board.objects.create(title=title, work_space=self, background_image=background_image)
+        return self.work_space_boards.filter(title=title)
     def work_space_members(self):
-        return self.members.all() | settings.AUTH_USER_MODEL.objects.filter(owner=self.owner)
+        return self.members.all()
     
     def archive(self):
         board_qs = self.work_space_boards.all()
@@ -67,7 +69,7 @@ class Board(BaseModel, SoftDeleteMixin):
         return f'{self.title} - related work space: {self.work_space}'
 
     def add_tasklist(self, title):
-        return self.board_Tasklists.create(title=title)
+        return TaskList.objects.create(title=title, board=self)
     
     def get_board_labels(self):
         """
@@ -118,8 +120,9 @@ class TaskList(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related board: {self.board}'
 
-    def add_task(self, title, description='', labels=None, start_date=None, end_date=None, assigned_to=None):
+    def add_task(self,doer, title, description='', labels=None, start_date=None, end_date=None, assigned_to=None):
         return Task.create_task(
+            doer=doer,
             title=title,
             status=self,
             description=description,
@@ -259,6 +262,7 @@ class Task(BaseModel, SoftDeleteMixin):
             task.assigned_to.set(assigned_to)
         message = f"A new task {title} was created."
         Activity.objects.create(task=task, doer=doer, message=message)
+        return task
     
     def update_task(self, doer, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
         """
