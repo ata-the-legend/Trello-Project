@@ -63,8 +63,7 @@ class Board(BaseModel, SoftDeleteMixin):
         return f'{self.title} - related work space: {self.work_space}'
 
     def add_tasklist(self, title):
-        TaskList.objects.create(title=title, board=self)
-        return self.board_Tasklists.filter(title=title)
+        return TaskList.objects.create(title=title, board=self)
     
     def get_board_labels(self):
         """
@@ -116,7 +115,7 @@ class TaskList(BaseModel, SoftDeleteMixin):
         return f'{self.title} - related board: {self.board}'
 
     def add_task(self,doer, title, description='', labels=None, start_date=None, end_date=None, assigned_to=None):
-        Task.create_task(
+        return Task.create_task(
             doer=doer,
             title=title,
             status=self,
@@ -126,7 +125,6 @@ class TaskList(BaseModel, SoftDeleteMixin):
             labels=labels,
             assigned_to=assigned_to,
         )
-        return self.status_tasks.filter(title=title)
 
     def task_count(self):
         return self.status_tasks.all().count()

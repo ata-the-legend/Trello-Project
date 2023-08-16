@@ -93,11 +93,15 @@ class WorkSpaceTestCase(TestCase):
         self.board_ata_1_1 = Board.objects.create(title='Board One', work_space=self.workspace_ata)
         self.list_1_1_1 = TaskList.objects.create(title='List One', board= self.board_ata_1_1)
         self.task_1 = Task.objects.create(title='Task One', description='...', status=self.list_1_1_1, order=1)
+        self.image = 'image.png'
        
         return super().setUp()
 
     def test_work_space(self):
         self.assertTrue(WorkSpace.objects.filter(title=self.workspace_ata.title, owner=self.workspace_ata.owner).exists())
+
+    def test_str(self):
+        self.assertEqual(str(self.workspace_ata), f'{self.workspace_ata.title} - owned by {self.workspace_ata.owner}')
 
     def test_add_member(self):
         w_member = self.workspace_ata.add_member(self.user_ali)
@@ -105,6 +109,9 @@ class WorkSpaceTestCase(TestCase):
 
     def test_add_board(self):
         w_board = self.workspace_ata.add_board(title=self.board_ata_1_1.title, background_image=None)
+        self.assertQuerysetEqual(w_board, self.workspace_ata.work_space_boards.filter(title=self.board_ata_1_1.title))
+
+        w_board = self.workspace_ata.add_board(title=self.board_ata_1_1.title, background_image=self.image)
         self.assertQuerysetEqual(w_board, self.workspace_ata.work_space_boards.filter(title=self.board_ata_1_1.title))
 
     def test_work_space_members(self):
@@ -151,19 +158,30 @@ class BoardTestCase(TestCase):
         self.user_ata = User.objects.create_user(email='ata@gmail.COM', password='1234', first_name='ata', last_name='test', avatar=None, mobile='01234567890')        
         self.workspace_ata = WorkSpace.objects.create(title='Ata Workspace', owner=self.user_ata)
         self.board_ata_1_1 = Board.objects.create(title='Board One', work_space=self.workspace_ata)
+        self.board_ata_1_2 = Board.objects.create(title='Board Two', work_space=self.workspace_ata)
         self.list_1_1_1 = TaskList.objects.create(title='List One', board= self.board_ata_1_1)
         self.task_1 = Task.objects.create(title='Task One', description='...', status=self.list_1_1_1, order=1)
         self.label_1 = Label.objects.create(title='Label one', board=self.board_ata_1_1)
         
+        
         return super().setUp()
 
+    def test_str(self):
+        self.assertEqual(str(self.board_ata_1_1), f'{self.board_ata_1_1.title} - related work space: {self.board_ata_1_1.work_space}')
+
     def test_add_tasklist(self):
-        b_tasklist = self.board_ata_1_1.add_tasklist(title=self.list_1_1_1.title)
-        self.assertQuerysetEqual(b_tasklist, self.board_ata_1_1.board_Tasklists.filter(title=self.list_1_1_1.title))
+        b_tasklist = self.board_ata_1_2.add_tasklist(title='List Two')
+        tasklist = self.board_ata_1_2.board_Tasklists.filter(title='List Two')
+        self.assertEqual(b_tasklist, tasklist[0])
 
     def test_get_board_labels(self):
         board_labels = self.board_ata_1_1.get_board_labels()
         self.assertCountEqual(board_labels, self.board_ata_1_1.board_labels.all())
+
+    def test_get_status_choices(self):
+        choices = self.board_ata_1_1.get_status_choices()
+        titles = self.board_ata_1_1.board_Tasklists.values_list('title', flat=True)
+        self.assertQuerysetEqual(choices, titles)
 
     def test_archive(self):
         self.assertTrue(self.board_ata_1_1.is_active)
@@ -206,10 +224,13 @@ class TaskListTestCase(TestCase):
         
         return super().setUp()
 
+    def test_str(self):
+        self.assertEqual(str(self.list_1_1_1), f'{self.list_1_1_1.title} - related board: {self.list_1_1_1.board}')
+
     def test_add_task(self):
         l_task = self.list_1_1_2.add_task(doer=self.user_ata, title='Task Two', description='...')
         task = self.list_1_1_2.status_tasks.filter(title='Task Two')
-        self.assertQuerysetEqual(l_task, task)
+        self.assertEqual(l_task, task[0])
         
     def test_task_count(self):
         self.assertEqual(self.list_1_1_1.task_count(), self.list_1_1_1.status_tasks.all().count())
