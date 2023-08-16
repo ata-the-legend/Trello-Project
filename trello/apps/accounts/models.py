@@ -1,5 +1,6 @@
 from uuid import uuid4
 from django.db.models.query import QuerySet
+from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
@@ -9,6 +10,7 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from trello.apps.core.models import SoftQuerySet
 from trello.apps.dashboards.models import Board
+from django.utils.html import mark_safe
 
 
 class UserManager(BaseUserManager):
@@ -44,7 +46,13 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
         return self._create_user(email, password, **extra_fields)
     
+    def get_queryset(self) -> QuerySet:
+        return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all().filter(is_active=True)
+    
 
+class HardManager(UserManager):
+    def get_queryset(self):
+        return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all()
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -92,6 +100,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     objects = UserManager()
+    original_objects = HardManager()
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"
@@ -100,6 +109,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = _("user")
         verbose_name_plural = _("users")
+
+    def avatar_tag(self):
+        return mark_safe('<img src="%s" width="50" height="50" />' % self.avatar.url)
 
     def clean(self):
         super().clean()
@@ -157,6 +169,21 @@ class User(AbstractBaseUser, PermissionsMixin):
                   | User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('owner'))
         
     def __str__(self):
-        return self.get_full_name()
+        return self.get_full_name() if self.get_full_name() != '' else self.email
     
-    
+
+
+class RecycleManager(UserManager):
+    def get_queryset(self):
+        return SoftQuerySet(model=self.model, using=self._db, hints=self._hints).all().filter(is_active=False)
+
+
+class UserRecycle(User):
+
+    objects = RecycleManager()
+
+    class Meta:
+        verbose_name = _("UserRecycle")
+        verbose_name_plural = _("UsersRecycle")
+        proxy = True
+

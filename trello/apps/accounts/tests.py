@@ -1,5 +1,6 @@
+from django.forms import ValidationError
 from django.test import TestCase
-from .models import User
+from .models import User, UserRecycle
 from trello.apps.dashboards.models import *
 from django.core import mail
 from django.utils import timezone
@@ -50,6 +51,7 @@ class UserTestCase(TestCase):
 
     def test_fields(self):
         self.assertEqual(self.user_ata.avatar, "uploads/avatars/default.jpg")
+        self.assertEqual(self.user_ata.avatar_tag(), '<img src="/media/uploads/avatars/default.jpg" width="50" height="50" />')
         self.assertEqual(self.user_ata.first_name, "ata")
         self.assertEqual(self.user_ata.last_name, "test")
         self.assertEqual(self.user_ata.mobile, "01234567890")
@@ -69,6 +71,7 @@ class UserTestCase(TestCase):
         self.assertTrue(self.user_ata.is_active)
         self.user_ata.archive()
         self.assertFalse(self.user_ata.is_active)
+        self.assertTrue(User.original_objects.filter(id = self.user_ata.id))
     
     def test_restore(self):
         self.user_ata.archive()
@@ -141,3 +144,17 @@ class UserTestCase(TestCase):
 
         # Verify that the subject of the first message is correct.
         self.assertEqual(mail.outbox[0].subject, "Subject")
+
+
+class UserRecycleTestCase(TestCase):
+
+    def setUp(self) -> None:
+        self.user_ata = User.objects.create_user(email='ata@gmail.COM', password='1234', first_name='ata', last_name='test', avatar=None, mobile='01234567890')
+        self.user_ali = User.objects.create_user(email='ali@gmail.COM', password='1234', first_name='ali', last_name='test', mobile='01234567893')
+        return super().setUp()
+
+    def test_recycle_manager(self):
+        self.assertCountEqual(UserRecycle.objects.all(), [])
+        self.user_ata.archive()
+        self.assertCountEqual(UserRecycle.objects.all(), [self.user_ata])
+        

@@ -45,6 +45,7 @@ DEVELOPED_APPS = [
 ]
 THIRD_PARTY_APPS = [
     'coverage',
+    'rest_framework',
 ]
 
 INSTALLED_APPS = SYSTEM_APPS + DEVELOPED_APPS + THIRD_PARTY_APPS
