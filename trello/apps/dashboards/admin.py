@@ -1,5 +1,24 @@
 from django.contrib import admin
-from .models import Attachment , Activity
+from .models import WorkSpace, Board, Attachment , Activity
+from .forms import MembersM2MAdminForm
+
+
+class MembersInline(admin.TabularInline):
+    model = WorkSpace.members.through
+    form = MembersM2MAdminForm
+    extra = 1
+    raw_id_fields = ('user',)
+
+
+@admin.register(WorkSpace)
+class WorkspaceAdmin(admin.ModelAdmin):
+    list_display = ['title', 'owner']
+    fields = ['title', 'owner']
+    inlines = (MembersInline,)
+
+@admin.register(Board)
+class BoardAdmin(admin.ModelAdmin):
+    list_display = ['work_space', 'title', 'background_image']
 
 
 @admin.register(Attachment)
@@ -11,8 +30,6 @@ class AttachmentAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     search_fields = ('task','owner')
     ordering = ('task',)
-
-
 
 
 @admin.register(Activity)

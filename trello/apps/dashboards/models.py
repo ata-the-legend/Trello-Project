@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from trello.apps.core.models import BaseModel, SoftDeleteMixin
 from django.utils.translation import gettext as _
+from django.core.exceptions import ValidationError
 
 
 class WorkSpace(BaseModel, SoftDeleteMixin):
@@ -10,8 +11,8 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Owner"), on_delete=models.CASCADE, help_text='The owner of the workspace', related_name='owner_work_spaces')
 
     class Meta:
-        verbose_name = _("Work Space")
-        verbose_name_plural = _("Work Spaces")
+        verbose_name = _("WorkSpace")
+        verbose_name_plural = _("WorkSpaces")
         ordering = ["-create_at"]
 
     def __str__(self):
@@ -45,6 +46,11 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
         list_qs.restore()
         board_qs.restore()
         return super().restore()
+    
+    def clean(self) -> None:
+        if self.owner in self.members.all():
+            raise ValidationError('Owner cant be member')
+        return super().clean()
 
 
 class Board(BaseModel, SoftDeleteMixin):
