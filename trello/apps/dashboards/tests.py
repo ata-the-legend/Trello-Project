@@ -1,5 +1,5 @@
 from django.test import TestCase
-from trello.apps.dashboards.models import Label, Board, Task, Activity,TaskList,Comment
+from trello.apps.dashboards.models import *
 from trello.apps.accounts.models import User
 
 # class LabelTestCase(TestCase):
@@ -105,10 +105,10 @@ class WorkSpaceTestCase(TestCase):
 
     def test_add_board(self):
         w_board = self.workspace_ata.add_board(title=self.board_ata_1_1.title, background_image=None)
-        self.assertIs([w_board], [self.board_ata_1_1])
+        self.assertQuerysetEqual(w_board, self.workspace_ata.work_space_boards.filter(title=self.board_ata_1_1.title))
 
     def test_work_space_members(self):
-        self.assertEqual(self.workspace_ata.work_space_members(), (self.workspace_ata.members.all(), self.user_ata))
+        self.assertQuerysetEqual(self.workspace_ata.work_space_members(), self.workspace_ata.members.all())
 
     def test_archive(self):
         self.assertTrue(self.workspace_ata.is_active)
@@ -118,21 +118,30 @@ class WorkSpaceTestCase(TestCase):
 
         self.workspace_ata.archive()
         self.assertFalse(self.workspace_ata.is_active)
+        self.board_ata_1_1.refresh_from_db()
         self.assertFalse(self.board_ata_1_1.is_active)
+        self.list_1_1_1.refresh_from_db()
         self.assertFalse(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
         self.assertFalse(self.task_1.is_active)
     
     def test_restore(self):
         self.workspace_ata.archive()
         self.assertFalse(self.workspace_ata.is_active)
-        # self.assertFalse(self.board_ata_1_1.is_active)
-        # self.assertFalse(self.list_1_1_1.is_active)
-        # self.assertFalse(self.task_1.is_active)
+        self.board_ata_1_1.refresh_from_db()
+        self.assertFalse(self.board_ata_1_1.is_active)
+        self.list_1_1_1.refresh_from_db()
+        self.assertFalse(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
+        self.assertFalse(self.task_1.is_active)
 
         self.workspace_ata.restore()
         self.assertTrue(self.workspace_ata.is_active)
+        self.board_ata_1_1.refresh_from_db()
         self.assertTrue(self.board_ata_1_1.is_active)
+        self.list_1_1_1.refresh_from_db()
         self.assertTrue(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
         self.assertTrue(self.task_1.is_active)
 
 class BoardTestCase(TestCase):
@@ -150,7 +159,7 @@ class BoardTestCase(TestCase):
 
     def test_add_tasklist(self):
         b_tasklist = self.board_ata_1_1.add_tasklist(title=self.list_1_1_1.title)
-        self.assertEqual([b_tasklist], [self.list_1_1_1])
+        self.assertQuerysetEqual(b_tasklist, self.board_ata_1_1.board_Tasklists.filter(title=self.list_1_1_1.title))
 
     def test_get_board_labels(self):
         board_labels = self.board_ata_1_1.get_board_labels()
@@ -163,18 +172,24 @@ class BoardTestCase(TestCase):
 
         self.board_ata_1_1.archive()
         self.assertFalse(self.board_ata_1_1.is_active)
+        self.list_1_1_1.refresh_from_db()
         self.assertFalse(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
         self.assertFalse(self.task_1.is_active)
     
     def test_restore(self):
         self.board_ata_1_1.archive()
-        # self.assertFalse(self.board_ata_1_1.is_active)
-        # self.assertFalse(self.list_1_1_1.is_active)
-        # self.assertFalse(self.task_1.is_active)
+        self.assertFalse(self.board_ata_1_1.is_active)
+        self.list_1_1_1.refresh_from_db()
+        self.assertFalse(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
+        self.assertFalse(self.task_1.is_active)
 
         self.board_ata_1_1.restore()
         self.assertTrue(self.board_ata_1_1.is_active)
+        self.list_1_1_1.refresh_from_db()
         self.assertTrue(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
         self.assertTrue(self.task_1.is_active)
    
 class TaskListTestCase(TestCase):
@@ -185,13 +200,16 @@ class TaskListTestCase(TestCase):
         self.workspace_ata = WorkSpace.objects.create(title='Ata Workspace', owner=self.user_ata)
         self.board_ata_1_1 = Board.objects.create(title='Board One', work_space=self.workspace_ata)
         self.list_1_1_1 = TaskList.objects.create(title='List One', board= self.board_ata_1_1)
+        self.list_1_1_2 = TaskList.objects.create(title='List Two', board= self.board_ata_1_1)
         self.task_1 = Task.objects.create(title='Task One', description='...', status=self.list_1_1_1, order=1)
+        self.task_1.assigned_to.add(self.user_ata)
         
         return super().setUp()
 
     def test_add_task(self):
-        l_task = self.list_1_1_1.add_task(title='Task One', description='...', assigned_to=self.user_ata)
-        self.assertEqual(l_task, self.list_1_1_1)
+        l_task = self.list_1_1_2.add_task(doer=self.user_ata, title='Task Two', description='...')
+        task = self.list_1_1_2.status_tasks.filter(title='Task Two')
+        self.assertQuerysetEqual(l_task, task)
         
     def test_task_count(self):
         self.assertEqual(self.list_1_1_1.task_count(), self.list_1_1_1.status_tasks.all().count())
@@ -202,13 +220,16 @@ class TaskListTestCase(TestCase):
 
         self.list_1_1_1.archive()
         self.assertFalse(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
         self.assertFalse(self.task_1.is_active)
     
     def test_restore(self):
         self.list_1_1_1.archive()
-        # self.assertFalse(self.list_1_1_1.is_active)
-        # self.assertFalse(self.task_1.is_active)
+        self.assertFalse(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
+        self.assertFalse(self.task_1.is_active)
 
         self.list_1_1_1.restore()
         self.assertTrue(self.list_1_1_1.is_active)
+        self.task_1.refresh_from_db()
         self.assertTrue(self.task_1.is_active)
