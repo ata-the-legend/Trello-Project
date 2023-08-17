@@ -316,9 +316,8 @@ class Task(BaseModel, SoftDeleteMixin):
 
         for message in messages:
             Activity.objects.create(task=self, doer=doer, message=message)
-    
 
-
+            
     def get_comment(self):
         """
         Returns the comments associated with the Task object.
