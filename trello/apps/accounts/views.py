@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from .models import User
 from .serializers import UserSerializer
-from rest_framework import mixins
+from .permissions import UserPermission
 
 
 class SoftDestroyModelMixin:
@@ -18,13 +18,13 @@ class SoftDestroyModelMixin:
     def perform_destroy(self, instance):
         instance.archive()
 
-# class RegisterModelMixin(mixins.CreateModelMixin):
-#     def register(self, request, *args, **kwargs):
-#         self.create(self, request, *args, **kwargs)
-
 
 
 class UserView(SoftDestroyModelMixin, 
                ModelViewSet):
+    
+    permission_classes = [UserPermission, ]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+
