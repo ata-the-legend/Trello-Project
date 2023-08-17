@@ -4,6 +4,9 @@ import traceback
 from rest_framework.utils import model_meta
 
 class UserSerializer(serializers.ModelSerializer):
+
+    password_confirm = serializers.CharField(required=True, write_only= True)
+
     class Meta:
         model = User
         # fields = ['first_name', 'last_name', 'email', 'avatar', 'password', 'mobile', ]
@@ -11,6 +14,11 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'last_login', 'date_joined', ]
         extra_kwargs = {'password': {'write_only': True}}
         
+    def validate(self, attrs):
+        if attrs['password_confirm'] != attrs['password']:
+            raise serializers.ValidationError('Passwords does not match.')
+        del attrs['password_confirm']
+        return super().validate(attrs)
 
     def create(self, validated_data):
 
