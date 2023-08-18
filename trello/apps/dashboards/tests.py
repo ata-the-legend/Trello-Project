@@ -2,6 +2,7 @@ from django.utils import timezone
 from django.test import TestCase 
 from django.contrib.auth import get_user_model
 from trello.apps.dashboards.models import Label, Board ,WorkSpace,Task,TaskList ,Comment , Activity,Attachment
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -310,6 +311,12 @@ class WorkSpaceTestCase(TestCase):
     def test_add_member(self):
         w_member = self.workspace_ata.add_member(self.user_ali)
         self.assertEqual(w_member, self.workspace_ata)
+        
+        self.workspace_ata.clean()
+        new_member = self.workspace_ata.add_member(self.user_ata)
+        with self.assertRaises(ValidationError):
+            self.workspace_ata.clean()
+
 
     def test_add_board(self):
         w_board = self.workspace_ata.add_board(title=self.board_ata_1_1.title, background_image=None)

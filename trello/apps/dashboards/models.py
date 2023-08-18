@@ -500,9 +500,6 @@ class Attachment(BaseModel , SoftDeleteMixin):
         return Attachment.objects.filter(owner= self.owner, task__status__board = self.task.status.board)
 
 
-    def owner_other_attachments_on_board(self):
-        return self.objects.filter(owner= self.owner, task__status__board__in= self.task.status.board)
-
     class Meta:
         verbose_name = _('Attachment')
         verbose_name_plural =_("Attachments")
