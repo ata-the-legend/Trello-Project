@@ -193,61 +193,66 @@ class TaskTestCase(TestCase):
 
 
 
-    # def test_update_task(self):
-    #     new_title = "Updated Title"
-    #     new_description = "Updated Description"
-    #     new_status = self.task_list  # Update with a valid TaskList instance
-    #     new_order = 2
-    #     new_labels = [self.label1, self.label2]  # Update with valid Label instances
-    #     new_start_date = datetime(2023, 8, 1, tzinfo=timezone.utc)
-    #     new_end_date = datetime(2023, 8, 15, tzinfo=timezone.utc)
-    #     new_assigned_to = [self.user1, self.user2]
+    def test_update_task(self):
+        new_title = "Updated Title"
+        new_description = "Updated Description"
+        new_status = self.task_list  # Update with a valid TaskList instance
+        new_order = 2
+        new_labels = [self.label1, self.label2]  # Update with valid Label instances
+        new_start_date = datetime(2023, 8, 1, tzinfo=timezone.utc)
+        new_end_date = datetime(2023, 8, 15, tzinfo=timezone.utc)
+        new_assigned_to = [self.user1, self.user2]
 
-    #     initial_assigned_users = [self.user1, self.user2]
-    #     removed_user = self.user1
+        initial_assigned_users = [self.user1, self.user2]
+        removed_user = self.user1
 
-    #     updated_assigned_users = [user for user in initial_assigned_users if user != removed_user]
+        updated_assigned_users = [user for user in initial_assigned_users if user != removed_user]
 
-    #     # Call the update_task method
-    #     self.task.update_task(
-    #         doer=self.user1,
-    #         title=new_title,
-    #         description=new_description,
-    #         status=new_status,
-    #         order=new_order,
-    #         labels=new_labels,
-    #         start_date=new_start_date,
-    #         end_date=new_end_date,
-    #         assigned_to=updated_assigned_users,
-    #     )
+        self.task.update_task(
+            doer=self.user1,
+            assigned_to=initial_assigned_users,
+        )
 
-    #     # Refresh the object from the database to get the updated values
-    #     self.task.refresh_from_db()
+        # Call the update_task method
+        self.task.update_task(
+            doer=self.user1,
+            title=new_title,
+            description=new_description,
+            status=new_status,
+            order=new_order,
+            labels=new_labels,
+            start_date=new_start_date,
+            end_date=new_end_date,
+            assigned_to=updated_assigned_users,
+        )
 
-    #     # Assert the changes
-    #     self.assertEqual(self.task.title, new_title)
-    #     self.assertEqual(self.task.description, new_description)
-    #     self.assertEqual(self.task.status, new_status)
-    #     self.assertEqual(self.task.order, new_order)
-    #     self.assertCountEqual(list(self.task.labels.all()), new_labels)
-    #     self.assertEqual(self.task.start_date, new_start_date)
-    #     self.assertEqual(self.task.end_date, new_end_date)
-    #     self.assertCountEqual(list(self.task.assigned_to.all()), updated_assigned_users)        
-    #     self.assertNotIn(removed_user, self.task.assigned_to.all())
+        # Refresh the object from the database to get the updated values
+        self.task.refresh_from_db()
 
-    #     # Retrieve Activity instances related to the task and assert messages
-    #     activity_messages = [activity.message for activity in Activity.objects.filter(task=self.task)]
-    #     expected_messages = [
-    #         f"Task title was changed to {new_title}.",
-    #         "Task description was changed.",
-    #         f"Task status was changed to {new_status.title}.",
-    #         f"Task start date was changed to {new_start_date}.",
-    #         f"Task end date was changed to {new_end_date}.",
-    #         f"Task assined to {self.user1.get_full_name()}.",
-    #         f"Task assined to {self.user2.get_full_name()}.",
-    #         f"{removed_user.get_full_name()} removed from task assigness.",
-    #     ]
-    #     self.assertCountEqual(activity_messages, expected_messages)
+        # Assert the changes
+        self.assertEqual(self.task.title, new_title)
+        self.assertEqual(self.task.description, new_description)
+        self.assertEqual(self.task.status, new_status)
+        self.assertEqual(self.task.order, new_order)
+        self.assertCountEqual(list(self.task.labels.all()), new_labels)
+        self.assertEqual(self.task.start_date, new_start_date)
+        self.assertEqual(self.task.end_date, new_end_date)
+        self.assertCountEqual(list(self.task.assigned_to.all()), updated_assigned_users)        
+        self.assertNotIn(removed_user, self.task.assigned_to.all())
+
+        # Retrieve Activity instances related to the task and assert messages
+        activity_messages = [activity.message for activity in Activity.objects.filter(task=self.task)]
+        expected_messages = [
+            f"Task title was changed to {new_title}.",
+            "Task description was changed.",
+            f"Task status was changed to {new_status.title}.",
+            f"Task start date was changed to {new_start_date}.",
+            f"Task end date was changed to {new_end_date}.",
+            f"Task assined to {self.user1.get_full_name()}.",
+            f"Task assined to {self.user2.get_full_name()}.",
+            f"{removed_user.get_full_name()} removed from task assigness.",
+        ]
+        self.assertCountEqual(activity_messages, expected_messages)
 
 
     def test_get_comment(self):
