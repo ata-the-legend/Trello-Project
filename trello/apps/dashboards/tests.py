@@ -1,5 +1,4 @@
 from django.utils import timezone
-from datetime import datetime, timedelta, timezone
 from django.test import TestCase 
 from django.contrib.auth import get_user_model
 from trello.apps.dashboards.models import Label, Board ,WorkSpace,Task,TaskList ,Comment , Activity,Attachment
@@ -179,8 +178,8 @@ class TaskTestCase(TestCase):
             description="Test Description",
             status=self.task_list,
             labels=[self.label1, self.label2],
-            start_date=datetime.strptime("2023-01-01", "%Y-%m-%d"),  # Convert to datetime
-            end_date=datetime.strptime("2023-12-31", "%Y-%m-%d"),    # Convert to datetime
+            start_date=timezone.make_aware(timezone.datetime.strptime("2023-01-01", "%Y-%m-%d")),  # Convert to datetime
+            end_date=timezone.make_aware(timezone.datetime.strptime("2023-12-31", "%Y-%m-%d")),    # Convert to datetime
             assigned_to=[self.user1, self.user2]
         )
         self.assertEqual(task.start_date.strftime('%Y-%m-%d'), "2023-01-01")
@@ -199,9 +198,8 @@ class TaskTestCase(TestCase):
         new_status = self.task_list  # Update with a valid TaskList instance
         new_order = 2
         new_labels = [self.label1, self.label2]  # Update with valid Label instances
-        new_start_date = datetime(2023, 8, 1, tzinfo=timezone.utc)
-        new_end_date = datetime(2023, 8, 15, tzinfo=timezone.utc)
-        new_assigned_to = [self.user1, self.user2]
+        new_start_date = timezone.datetime(2023, 8, 1, tzinfo=timezone.utc)
+        new_end_date = timezone.datetime(2023, 8, 15, tzinfo=timezone.utc)
 
         initial_assigned_users = [self.user1, self.user2]
         removed_user = self.user1
