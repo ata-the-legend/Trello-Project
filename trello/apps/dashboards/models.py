@@ -167,7 +167,7 @@ class Label(BaseModel):
         :return: The created Label object.
         :rtype: Label
         """
-        label = cls.objects.get_or_create(title=title, board=board)
+        label = cls.objects.create(title=title, board=board)
         return label
     
 
@@ -325,9 +325,8 @@ class Task(BaseModel, SoftDeleteMixin):
 
         for message in messages:
             Activity.objects.create(task=self, doer=doer, message=message)
-    
 
-
+            
     def get_comment(self):
         """
         Returns the comments associated with the Task object.
@@ -384,6 +383,8 @@ class Task(BaseModel, SoftDeleteMixin):
         :rtype: QuerySet[Comment]
         """
         return self.task_comments.all()
+    
+    
 
 
     
@@ -401,6 +402,7 @@ class Comment(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'Comment by {self.author} on task {self.task}'
     
+    @classmethod
     def create_comment(cls, body, task, author, parent=None):
         """
         Creates a new Comment object with the given parameters.
@@ -437,7 +439,7 @@ class Comment(BaseModel, SoftDeleteMixin):
         """
         if body is not None:
             self.body = body
-            self.save
+            self.save()
             message = f"{self.author.get_full_name()} updated a comment on task {self.task.title}."
             Activity.objects.create(task=self.task, doer=self.author, message=message)
 
