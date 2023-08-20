@@ -20,7 +20,7 @@ class SoftDestroyModelMixin:
 
 
 
-class UserView(SoftDestroyModelMixin, 
+class UserApiView(SoftDestroyModelMixin, 
                ModelViewSet):
     
     permission_classes = [UserPermission, ]

@@ -1,6 +1,6 @@
 from django.urls import path
 from .routers import UserCustomRouter
-from .views import UserView
+from .views import UserApiView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
@@ -12,5 +12,5 @@ urlpatterns = [
 
 
 router = UserCustomRouter()
-router.register(prefix='' ,viewset=UserView)
+router.register(prefix='' ,viewset=UserApiView)
 urlpatterns += router.urls

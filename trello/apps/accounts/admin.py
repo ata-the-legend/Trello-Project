@@ -40,7 +40,7 @@ class AppUserAdmin(UserAdmin):
     list_filter = ("is_staff", "is_superuser", "groups", "date_joined")
     search_fields = ("mobile", "first_name", "last_name", "email")
     ordering = ("email",)
-    add_form = CustomUserCreationForm
+    # add_form = CustomUserCreationForm
 
     actions = ['archive']
     @admin.action(description='Archive Selected Users')
