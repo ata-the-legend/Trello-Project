@@ -47,6 +47,7 @@ DEVELOPED_APPS = [
 THIRD_PARTY_APPS = [
     'coverage',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 INSTALLED_APPS = SYSTEM_APPS + DEVELOPED_APPS + THIRD_PARTY_APPS
