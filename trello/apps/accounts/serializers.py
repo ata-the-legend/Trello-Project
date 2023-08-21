@@ -72,3 +72,14 @@ class UserSerializer(serializers.ModelSerializer):
         if 'password' in validated_data.keys() or 'password_confirm' in validated_data.keys():
             validated_data.pop('password')
         return super().update(instance, validated_data)
+
+
+class UserPasswordSerializer(serializers.Serializer):
+    
+    password = serializers.CharField(required=True, write_only= True)
+    password_confirm = serializers.CharField(required=True, write_only= True)
+
+    def validate(self, attrs):
+        if attrs['password_confirm'] != attrs['password']:
+            raise serializers.ValidationError('Passwords does not match.')
+        return super().validate(attrs)

@@ -23,6 +23,16 @@ class UserCustomRouter(SimpleRouter):
             detail=False,
             initkwargs={'suffix': 'List'}
         ),
+        # Change_password route.
+        Route(
+            url=r'^{prefix}/{lookup}/change-password{trailing_slash}$',
+            mapping={
+                'post': 'change_password'
+            },
+            name='{basename}-detail',
+            detail=True,
+            initkwargs={'suffix': 'Instance'}
+        ),
         # Dynamically generated list routes. Generated using
         # @action(detail=False) decorator on methods of the viewset.
         DynamicRoute(
