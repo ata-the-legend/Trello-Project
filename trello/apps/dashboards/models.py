@@ -151,6 +151,7 @@ class Label(BaseModel):
     class Meta:
         verbose_name = _('Label')
         verbose_name_plural =_("Labels")
+        unique_together = ["title", "board"]
 
     def __str__(self):
         return self.title

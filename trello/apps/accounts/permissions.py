@@ -8,7 +8,7 @@ class UserPermission(permissions.BasePermission):
             return request.user and request.user.is_authenticated
         elif view.action == 'create':
             return True
-        elif view.action in ['retrieve', 'update', 'partial_update', 'softdestroy']:
+        elif view.action in ['retrieve', 'update', 'partial_update', 'softdestroy', 'change_password']:
             return request.user and request.user.is_authenticated
         else:
             return False
