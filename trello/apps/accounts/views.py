@@ -6,6 +6,7 @@ from .serializers import UserSerializer, UserPasswordSerializer
 from .permissions import UserPermission
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework.decorators import action
+from drf_spectacular.utils import extend_schema
 
 
 class SoftDestroyModelMixin:
@@ -33,6 +34,7 @@ class UserViewSet(SoftDestroyModelMixin,
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    @extend_schema(request=UserPasswordSerializer, responses={'200': {'status': 'password set'}})
     @action(methods=['post'], detail=True, url_path='change-password')
     def change_password(self, request, *args, **kwargs):
         user = self.get_object()
