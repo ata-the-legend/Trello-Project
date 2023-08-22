@@ -2,7 +2,7 @@ from typing import Any
 from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
-from .models import WorkSpace, Board, Attachment , Activity
+from .models import *
 from .forms import MembersM2MAdminForm
 
 
@@ -11,6 +11,21 @@ class MembersInline(admin.TabularInline):
     form = MembersM2MAdminForm
     extra = 1
     raw_id_fields = ('user',)
+
+
+class WorkSpaceBoardInline(admin.TabularInline):
+    model = Board
+    extra = 1
+
+
+class BoardListInline(admin.TabularInline):
+    model = TaskList
+    extra = 1
+
+
+class ListTaskInline(admin.TabularInline):
+    model = Task
+    extra = 1
 
 
 @admin.register(WorkSpace)
@@ -31,6 +46,17 @@ class WorkspaceAdmin(admin.ModelAdmin):
 @admin.register(Board)
 class BoardAdmin(admin.ModelAdmin):
     list_display = ['work_space', 'title', 'background_image']
+    list_filter = ['title']
+    search_fields = ('title',)
+    inlines = (BoardListInline,)
+
+
+@admin.register(TaskList)
+class TaskListAdmin(admin.ModelAdmin):
+    list_display = ['title', 'board']
+    list_filter = ['title']
+    search_fields = ('title',)
+    inlines = (ListTaskInline,)
 
 
 @admin.register(Attachment)
