@@ -39,7 +39,7 @@ class UserViewSet(SoftDestroyModelMixin,
     serializer_class = UserSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['^first_name', '^last_name', '^email']
-    ordering_fields = ['email']
+    ordering_fields = ['email', 'first_name', 'last_name',]
     ordering = ['email']
     pagination_class = UserResultsSetPagination
 
