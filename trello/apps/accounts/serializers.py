@@ -83,3 +83,9 @@ class UserPasswordSerializer(serializers.Serializer):
         if attrs['password_confirm'] != attrs['password']:
             raise serializers.ValidationError('Passwords does not match.')
         return super().validate(attrs)
+    
+class UserListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'avatar', ]

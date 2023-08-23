@@ -2,7 +2,7 @@ from rest_framework.viewsets import mixins, GenericViewSet
 from rest_framework import status
 from rest_framework.response import Response
 from .models import User
-from .serializers import UserSerializer, UserPasswordSerializer
+from .serializers import UserListSerializer, UserSerializer, UserPasswordSerializer
 from .permissions import UserPermission
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework.decorators import action
@@ -34,11 +34,19 @@ class UserViewSet(SoftDestroyModelMixin,
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    @extend_schema(request=UserPasswordSerializer, responses={'200': {'status': 'password set'}})
+    def get_serializer_class(self):
+        match self.action:
+            case  'change_password':
+                return UserPasswordSerializer
+            case 'list':
+                return UserListSerializer
+        return super().get_serializer_class()
+
+    @extend_schema(responses={'200': {'status': 'password set'}})
     @action(methods=['post'], detail=True, url_path='change-password')
     def change_password(self, request, *args, **kwargs):
         user = self.get_object()
-        serializer = UserPasswordSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user.set_password(serializer.validated_data['password'])
             user.save()
