@@ -1,6 +1,7 @@
 from rest_framework.viewsets import mixins, GenericViewSet
-from rest_framework import status
+from rest_framework import status, filters
 from rest_framework.response import Response
+from .paginations import UserResultsSetPagination
 from .models import User
 from .serializers import UserListSerializer, UserSerializer, UserPasswordSerializer
 from .permissions import UserPermission
@@ -29,10 +30,18 @@ class UserViewSet(SoftDestroyModelMixin,
                     mixins.UpdateModelMixin,
                     mixins.ListModelMixin,
                     GenericViewSet):
+    """
+        User Crud ViewSet.
+    """
     
     permission_classes = [UserPermission, ]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['^first_name', '^last_name', '^email']
+    ordering_fields = ['email']
+    ordering = ['email']
+    pagination_class = UserResultsSetPagination
 
     def get_serializer_class(self):
         match self.action:
