@@ -32,8 +32,8 @@ class ListTaskInline(admin.TabularInline):
 class WorkspaceAdmin(admin.ModelAdmin):
     list_display = ['title', 'owner']
     fields = ['title', 'owner', 'is_active']
-    inlines = (MembersInline,)
-    list_filter = ['is_active']
+    inlines = (MembersInline, WorkSpaceBoardInline)
+    list_filter = ['is_active', 'title']
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = self.model.original_objects.get_queryset()
@@ -46,7 +46,7 @@ class WorkspaceAdmin(admin.ModelAdmin):
 @admin.register(Board)
 class BoardAdmin(admin.ModelAdmin):
     list_display = ['work_space', 'title', 'background_image']
-    list_filter = ['title']
+    list_filter = ['is_active', 'title']
     search_fields = ('title',)
     inlines = (BoardListInline,)
 
@@ -54,7 +54,7 @@ class BoardAdmin(admin.ModelAdmin):
 @admin.register(TaskList)
 class TaskListAdmin(admin.ModelAdmin):
     list_display = ['title', 'board']
-    list_filter = ['title']
+    list_filter = ['is_active', 'title']
     search_fields = ('title',)
     inlines = (ListTaskInline,)
 
@@ -84,3 +84,29 @@ class ActivityAdmin(admin.ModelAdmin):
     list_filter = ('message',)
     search_fields = ('doer', 'task',)
     ordering = ('task',)
+
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('title', 'description', 'status')}),
+        ('Dates', {'fields': ('start_date', 'end_date')}),
+        ('Relations', {'fields': ('labels', 'assigned_to')}),
+    )
+    #inlines = [ActivityInLine, AttachmentInLine]
+    list_display = ('title', 'status', 'start_date', 'end_date')
+    list_filter = ('status', 'labels', 'assigned_to', 'start_date', 'end_date')
+    search_fields = ('title', 'description')
+    ordering = ('status', 'start_date')
+    actions = ['archive_tasks']
+
+
+@admin.register(Label)
+class LabelAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('title', 'board')}),
+    )
+    list_display = ('title', 'board')
+    list_filter = ('board',)
+    search_fields = ('title',)
+    ordering = ('board',)
