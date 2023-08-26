@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
-from dashboards.serializers import LabelSerializer
+from dashboards.serializers import LabelSerializer, TaskSerializer
 from trello.apps.dashboards.models import Label
 
 
