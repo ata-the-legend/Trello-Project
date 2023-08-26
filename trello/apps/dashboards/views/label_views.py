@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
-from dashboards.serializers import LabelSerializer, TaskSerializer
+from trello.apps.dashboards.serializers import LabelSerializer, TaskSerializer
 from trello.apps.dashboards.models import Label
 
 
@@ -14,6 +14,7 @@ class LabelViewSet(viewsets.ModelViewSet):
         label = Label.create_label(title, board)
         serializer = self.get_serializer(label)
         return Response(serializer.data)
+    
     
     def get_label_choices(self, request):
         choices = Label.get_label_choices()
