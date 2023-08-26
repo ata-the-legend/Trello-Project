@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from trello.apps.dashboards.models import Attachment
+from trello.apps.dashboards.models import Attachment,Task
 
 
 
