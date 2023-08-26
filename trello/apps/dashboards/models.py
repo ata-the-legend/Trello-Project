@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from trello.apps.core.models import BaseModel, SoftDeleteMixin
 from django.utils.translation import gettext as _
+from django.core.exceptions import ValidationError
 
 
 class WorkSpace(BaseModel, SoftDeleteMixin):
@@ -10,8 +11,8 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Owner"), on_delete=models.CASCADE, help_text='The owner of the workspace', related_name='owner_work_spaces')
 
     class Meta:
-        verbose_name = _("Work Space")
-        verbose_name_plural = _("Work Spaces")
+        verbose_name = _("WorkSpace")
+        verbose_name_plural = _("WorkSpaces")
         ordering = ["-create_at"]
 
     def __str__(self):
@@ -19,14 +20,16 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
 
     def add_member(self, member):
         self.members.add(member)
+        return self
 
     def add_board(self, title, background_image):
         if background_image is None:
-            return Board.objects.create(title=title, work_space=self)
-        return Board.objects.create(title=title, work_space=self, background_image=background_image)
-
+            Board.objects.create(title=title, work_space=self)
+            return self.work_space_boards.filter(title=title)
+        Board.objects.create(title=title, work_space=self, background_image=background_image)
+        return self.work_space_boards.filter(title=title)
     def work_space_members(self):
-        return self.members.all() | settings.AUTH_USER_MODEL.objects.filter(owner=self.owner)
+        return self.members.all()
     
     def archive(self):
         board_qs = self.work_space_boards.all()
@@ -45,6 +48,11 @@ class WorkSpace(BaseModel, SoftDeleteMixin):
         list_qs.restore()
         board_qs.restore()
         return super().restore()
+    
+    def clean(self) -> None:
+        if self.owner in self.members.all():
+            raise ValidationError('Owner cant be member')
+        return super().clean()
 
 
 class Board(BaseModel, SoftDeleteMixin):
@@ -61,7 +69,7 @@ class Board(BaseModel, SoftDeleteMixin):
         return f'{self.title} - related work space: {self.work_space}'
 
     def add_tasklist(self, title):
-        return self.board_Tasklists.create(title=title)
+        return TaskList.objects.create(title=title, board=self)
     
     def get_board_labels(self):
         """
@@ -112,8 +120,9 @@ class TaskList(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'{self.title} - related board: {self.board}'
 
-    def add_task(self, title, description='', labels=None, start_date=None, end_date=None, assigned_to=None):
+    def add_task(self,doer, title, description='', labels=None, start_date=None, end_date=None, assigned_to=None):
         return Task.create_task(
+            doer=doer,
             title=title,
             status=self,
             description=description,
@@ -142,6 +151,7 @@ class Label(BaseModel):
     class Meta:
         verbose_name = _('Label')
         verbose_name_plural =_("Labels")
+        unique_together = ["title", "board"]
 
     def __str__(self):
         return self.title
@@ -158,7 +168,7 @@ class Label(BaseModel):
         :return: The created Label object.
         :rtype: Label
         """
-        label = cls.objects.get_or_create(title=title, board=board)
+        label = cls.objects.create(title=title, board=board)
         return label
     
 
@@ -213,7 +223,7 @@ class Task(BaseModel, SoftDeleteMixin):
         return f'Task {self.title}'
     
     @classmethod
-    def create_task(cls, title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
+    def create_task(cls, doer, title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
         """
         Creates a new Task object with the given parameters.
         
@@ -252,7 +262,7 @@ class Task(BaseModel, SoftDeleteMixin):
         if assigned_to:
             task.assigned_to.set(assigned_to)
         message = f"A new task {title} was created."
-        Activity.objects.create(task=task, doer=assigned_to[0], message=message)
+        Activity.objects.create(task=task, doer=doer, message=message)
         return task
     
     def update_task(self, doer, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
@@ -316,9 +326,8 @@ class Task(BaseModel, SoftDeleteMixin):
 
         for message in messages:
             Activity.objects.create(task=self, doer=doer, message=message)
-    
 
-
+            
     def get_comment(self):
         """
         Returns the comments associated with the Task object.
@@ -375,6 +384,8 @@ class Task(BaseModel, SoftDeleteMixin):
         :rtype: QuerySet[Comment]
         """
         return self.task_comments.all()
+    
+    
 
 
     
@@ -392,6 +403,7 @@ class Comment(BaseModel, SoftDeleteMixin):
     def __str__(self):
         return f'Comment by {self.author} on task {self.task}'
     
+    @classmethod
     def create_comment(cls, body, task, author, parent=None):
         """
         Creates a new Comment object with the given parameters.
@@ -428,7 +440,7 @@ class Comment(BaseModel, SoftDeleteMixin):
         """
         if body is not None:
             self.body = body
-            self.save
+            self.save()
             message = f"{self.author.get_full_name()} updated a comment on task {self.task.title}."
             Activity.objects.create(task=self.task, doer=self.author, message=message)
 
@@ -473,10 +485,21 @@ class Attachment(BaseModel , SoftDeleteMixin):
         message = f"{owner.get_full_name()} attached a new file."
         Activity.objects.create(task= task, doer=owner, message = message)
         return attachment
+    
+    def archive(self):
+        """
+        Soft-deletes the Comment object.
+        """
+        # Create an Activity object to log the deletion of the comment
+        message = f"{self.owner.get_full_name()} deleted a attachment on task {self.task.title}."
+        Activity.objects.create(task=self.task, doer=self.owner, message=message)
+
+        return super().archive()
 
 
     def owner_other_attachments_on_board(self):
-        return self.objects.filter(owner= self.owner, task__status__board__in= self.task.status.board)
+        return Attachment.objects.filter(owner= self.owner, task__status__board = self.task.status.board)
+
 
     class Meta:
         verbose_name = _('Attachment')
@@ -484,7 +507,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
 
     def __str__(self):
-        return f"Attached by {self.owner.name}."
+        return f"Attached by {self.owner.get_full_name()}."
 
 
 class Activity(BaseModel):
@@ -495,15 +518,15 @@ class Activity(BaseModel):
     
     @classmethod
     def attachment_activity_on_board(cls, board: Board):
-        return cls.objects.filter(task__status__board__in= board, message__contains='attached')
+        return cls.objects.filter(task__status__board= board, message__contains='attached')
 
     @classmethod
     def task_create_activity_on_board(cls, board: Board):
-        return cls.objects.filter(task__status__board__in= board, message__contains='new task')
+        return cls.objects.filter(task__status__board= board, message__contains='new task')
 
     @classmethod
     def from_to_date_on_board(cls, from_date, to_date, board: Board):
-        return cls.objects.filter(task__status__board__in= board, update_at__gt=from_date, update_at__lge=to_date)
+        return cls.objects.filter(task__status__board= board, create_at__gt=from_date, create_at__lte=to_date)
 
     def doer_other_activitys_on_board(self):
         return self.doer.activities_on_board(self.task.status.board)
@@ -515,4 +538,4 @@ class Activity(BaseModel):
 
 
     def __str__(self):
-        return f'{self.update_at} - {self.message}'
+        return f'{self.create_at} - {self.message}'

@@ -15,11 +15,29 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from .apps.core.views import HomeVeiw
+
+doc_patterns = [
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+]
 
 urlpatterns = [
+    path("", HomeVeiw.as_view(), name="home"),
     path('admin/', admin.site.urls),
-]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
+    path('accounts/', include('trello.apps.accounts.urls', namespace='accounts')),
+    path('dashboards/', include('trello.apps.dashboards.urls', namespace='dashboards')),
+] + doc_patterns + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+admin.site.index_title = "Trello Project"
+admin.site.site_header = "Trello Admin"
+admin.site.site_title = "Trello Admin Panel"
+
+
+
