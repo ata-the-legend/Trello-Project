@@ -6,6 +6,11 @@ class LabelSerializer(serializers.ModelSerializer):
         model = Label
         fields = ('__all__')
 
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.save()
+        return instance
+
 
 class TaskSerializer(serializers.ModelSerializer):
     
