@@ -6,9 +6,9 @@ from .forms import CustomUserCreationForm
 
 @admin.register(User)
 class AppUserAdmin(UserAdmin):
-    readonly_fields = ['avatar_tag'] 
+    readonly_fields = ['avatar_tag', "id"] 
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
+        (None, {"fields": ("email", "password", "id")}),
         (_("Personal info"), {"fields": (("avatar_tag", 'avatar'), "first_name", "last_name", "mobile", )}),
         (
             _("Permissions"),
