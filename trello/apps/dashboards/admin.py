@@ -85,31 +85,46 @@ class AttachmentInLine(CustomTabularInline):
 
 @admin.register(WorkSpace)
 class WorkspaceAdmin(CustomModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('id', 'title', 'owner', 'is_active',)}),
+        (_("Important dates"), {"fields": ("create_at", "update_at")})
+    )
     list_display = ['title', 'owner', 'is_active']
-    fields = ['title', 'owner', 'is_active']
     inlines = (MembersInline, WorkSpaceBoardInline)
     list_filter = ['is_active']
     search_fields = ('title', 'owner__email',)
     raw_id_fields = ['owner']
+    readonly_fields = ("create_at", "update_at", 'id')
 
 
 @admin.register(Board)
 class BoardAdmin(CustomModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('id', 'title', 'work_space', 'background_image', 'is_active',)}),
+        (_("Important dates"), {"fields": ("create_at", "update_at")})
+    )
     list_display = ['title', 'work_space', 'is_active']
     list_filter = ['is_active',]
     search_fields = ('title', 'work_space__title', 'work_space__owner__email',)
     inlines = (BoardListInline,)
     raw_id_fields = ('work_space',)
+    readonly_fields = ("create_at", "update_at", 'id')
 
 
 
 @admin.register(TaskList)
 class TaskListAdmin(CustomModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('id', 'title', 'board', 'is_active',)}),
+        (_("Important dates"), {"fields": ("create_at", "update_at")})
+    )
     list_display = ['title', 'board', 'is_active']
     list_filter = ['is_active',]
     search_fields = ('title', 'board__work_space__title', 'board__work_space__owner__email')
     inlines = (ListTaskInline,)
     raw_id_fields = ('board',)
+    readonly_fields = ("create_at", "update_at", 'id')
+
 
 
 @admin.register(Attachment)
