@@ -1,19 +1,18 @@
 from rest_framework import serializers
+from rest_framework.fields import empty
 from trello.apps.dashboards.models import Attachment,Task
-
+from trello.apps.accounts.serializers import UserListSerializer
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
     file = serializers.FileField()
     task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
-    owner = serializers.ReadOnlyField(source='owner.get_full_name')
+    owner = UserListSerializer()
 
 
     class Meta:
         model = Attachment
         fields = ['id','file','task','owner']
-
-
 
     def create(self,validated_data):
         file = validated_data.get('file')
@@ -29,5 +28,3 @@ class AttachmentSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
-    def destroy(self, instance):
-        instance.archive()
