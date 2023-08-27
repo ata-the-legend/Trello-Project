@@ -21,3 +21,6 @@ class CommentSerializer(serializers.ModelSerializer):
         body = validated_data.get('body')
         instance.update_comment(body)
         return instance
+    
+    def destroy(self, instance):
+        instance.archive()
