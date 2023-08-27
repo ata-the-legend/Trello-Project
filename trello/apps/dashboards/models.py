@@ -507,7 +507,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
 
     def __str__(self):
-        return f"Attached by {self.owner.get_full_name()}."
+        return f"Attached by {self.owner}."
 
 
 class Activity(BaseModel):
@@ -538,4 +538,4 @@ class Activity(BaseModel):
 
 
     def __str__(self):
-        return f'{self.create_at} - {self.message}'
+        return f'Done By {self.doer}'
