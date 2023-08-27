@@ -28,3 +28,6 @@ class AttachmentSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
+
+    def destroy(self, instance):
+        instance.archive()
