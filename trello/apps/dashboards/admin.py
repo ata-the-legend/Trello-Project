@@ -226,5 +226,3 @@ class LabelAdmin(admin.ModelAdmin):
 
 
 
-
-
