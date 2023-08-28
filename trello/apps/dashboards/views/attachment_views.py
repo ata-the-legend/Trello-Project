@@ -5,7 +5,7 @@ from trello.apps.dashboards.serializers import AttachmentSerializer
 from rest_framework.response import Response
 
 
-class SoftDestroyModelMixin(DestroyModelMixin):
+class SoftDestroyModelMixin:
      def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.archive()
