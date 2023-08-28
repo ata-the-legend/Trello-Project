@@ -5,6 +5,7 @@ from trello.apps.accounts.serializers import UserListSerializer
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
+    file = serializers.FileField()
     task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
     owner = UserListSerializer()
 
