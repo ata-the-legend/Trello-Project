@@ -35,7 +35,8 @@ class WorkspaceSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
-        validated_data['members'] = validated_data.pop("add_members")
+        if validated_data.get('add_members', None):
+            validated_data['members'] = validated_data.pop("add_members")
         user = None
         request = self.context.get("request")
         if request and hasattr(request, "user"):
