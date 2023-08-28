@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from trello.apps.accounts.models import User
-from .models import Board, WorkSpace
+from .models import Board, WorkSpace, TaskList
 
 class UserListSerializer(serializers.ModelSerializer):
 
@@ -57,3 +57,25 @@ class WorkspaceSerializer(serializers.ModelSerializer):
 class WorkspaceAddMemberSerializer(serializers.Serializer):
     new_members = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
 
+
+class TaskListSerializer(serializers.ModelSerializer):
+    board = BoardListSerializer()
+
+    class Meta:
+        model = TaskList
+        fields = ['title', 'board']
+
+    # def create(self, validated_data):
+    #     workspace_data = validated_data.pop('board')
+    #     tasklist = TaskList.objects.create(**validated_data)
+    #     Board.objects.create(tasklist=tasklist, **workspace_data)
+    #     return tasklist
+
+    # def update(self, instance, validated_data):
+    #     workspace_data = validated_data.pop('board')
+    #     work_space = instance.board
+
+    #     instance.title = validated_data.get('title', instance.title)
+    #     instance.save()
+
+    #     return instance    
