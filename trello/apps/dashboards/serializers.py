@@ -13,7 +13,7 @@ class WorkSpaceListSerializer(serializers.ModelSerializer):
             ]
 
 
-class TaslListListSerializer(serializers.ModelSerializer):
+class TaskListListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskList
         fields = [
@@ -24,7 +24,7 @@ class TaslListListSerializer(serializers.ModelSerializer):
 
 class BoardSerializer(serializers.ModelSerializer):
     board_work_space = WorkSpaceListSerializer(read_only=True, source='work_space')
-    board_Tasklists = TaslListListSerializer(read_only=True, many=True)
+    board_Tasklists = TaskListListSerializer(read_only=True, many=True)
 
     class Meta:
         model = Board
