@@ -19,7 +19,7 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-
+from .apps.core.views import HomeVeiw
 
 doc_patterns = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
@@ -28,6 +28,7 @@ doc_patterns = [
 ]
 
 urlpatterns = [
+    path("", HomeVeiw.as_view(), name="home"),
     path('admin/', admin.site.urls),
     path('accounts/', include('trello.apps.accounts.urls', namespace='accounts')),
     path('dashboards/', include('trello.apps.dashboards.urls', namespace='dashboards')),

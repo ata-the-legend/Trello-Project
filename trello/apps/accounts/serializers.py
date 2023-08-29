@@ -3,12 +3,26 @@ from.models import User, _
 import traceback
 # from rest_framework.utils import model_meta
 from rest_framework.validators import UniqueValidator
+from trello.apps.dashboards.models import WorkSpace
 
+
+class UserListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'avatar', ]
+
+class WorkspacelistSerializer(serializers.ModelSerializer):
+    members = UserListSerializer(many=True, read_only = True)
+    class Meta:
+        model = WorkSpace
+        fields = ['id', 'title', 'members']
 
 
 class UserSerializer(serializers.ModelSerializer):
 
     password_confirm = serializers.CharField(required=True, write_only= True)
+    owner_work_spaces = WorkspacelistSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -83,3 +97,4 @@ class UserPasswordSerializer(serializers.Serializer):
         if attrs['password_confirm'] != attrs['password']:
             raise serializers.ValidationError('Passwords does not match.')
         return super().validate(attrs)
+    
