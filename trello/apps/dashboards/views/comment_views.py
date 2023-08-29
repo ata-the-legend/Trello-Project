@@ -8,6 +8,9 @@ from trello.apps.dashboards.permissions import CommentPermission
 
 
 class SoftDestroyModelMixin:
+    """
+    Mixin for soft-deleting model instances
+    """
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.archive()
@@ -19,6 +22,11 @@ class CommentViewSet(mixins.CreateModelMixin,
                    SoftDestroyModelMixin,
                    mixins.ListModelMixin,
                    viewsets.GenericViewSet):
+    """
+    This viewset allows creating, retrieving, updating, soft-deleting, and listing comments.
+    Soft-deletion is performed using the 'SoftDestroyModelMixin' to archive comments
+    instead of permanently deleting them.
+    """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated, CommentPermission]

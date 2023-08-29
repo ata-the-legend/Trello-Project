@@ -2,6 +2,9 @@ from rest_framework import serializers
 from trello.apps.dashboards.models import Comment
 
 class CommentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and updating comments.
+    """
     parent = serializers.PrimaryKeyRelatedField(queryset=Comment.objects.all(), required=False)
    
 
@@ -12,7 +15,9 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'task', 'author']
 
     def create(self, validated_data):
-        
+        """
+        Create a new comment instance.
+        """
         task = self.context.get('task') 
         author = self.context['request'].user
         parent = validated_data.get('parent')
@@ -20,6 +25,9 @@ class CommentSerializer(serializers.ModelSerializer):
         return comment
 
     def update(self, instance, validated_data):
+        """
+        Update an existing comment instance.
+        """
         body = validated_data.get('body')
         instance.update_comment(body)
         return instance
