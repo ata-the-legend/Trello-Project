@@ -1,15 +1,11 @@
 from rest_framework import permissions
-from trello.apps.dashboards.models import *
 
-class AttachmentPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if view.action in ['list', 'retrieve']:
-            attachment = view.get_object()
-            workspace_members = attachment.task.status.board.work_space.members.all()
-            return user in workspace_members
-        elif view.action in ['create', 'update', 'destroy']:
-            attachment = view.get_object()
-            workspace_owner = attachment.task.status.board.work_space.owner
-            return user == attachment.owner or user == workspace_owner
-        return True
+class AttachmentPermissions(permissions.IsAuthenticated):
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user in obj.task.status.board.work_space.members.all() or request.user == obj.task.status.board.work_space.owner
+        elif request.method in ['POST', 'DELETE', 'PUT', 'PATCH',]:
+            return request.user == obj.owner or request.user == obj.owner
+        return False
+
