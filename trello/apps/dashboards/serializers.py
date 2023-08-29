@@ -207,4 +207,33 @@ class TaskSerializer(serializers.ModelSerializer):
         instance.update_task(doer=doer, **validated_data)
 
         return instance
-    
+
+
+class WorkSpaceListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkSpace
+        fields = [
+            'id', 
+            'title', 
+            'owner', 
+            ]
+
+
+class BoardSerializer(serializers.ModelSerializer):
+    board_work_space = WorkSpaceListSerializer(read_only=True, source='work_space')
+    board_Tasklists = TaskListListSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Board
+        fields = [
+            'id', 
+            'title', 
+            'board_work_space', 
+            'background_image', 
+            'work_space', 
+            'board_Tasklists', 
+            ]
+        extra_kwargs = {
+            'work_space': {'write_only':True}
+        }
+
