@@ -243,3 +243,51 @@ class AttachmentSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
+
+
+class TaskModelListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'order', 'labels', 'start_date', 'end_date', 'assigned_to', ]
+
+
+class TaskListSerializer(serializers.ModelSerializer):
+    list_board = BoardListSerializer(read_only=True, source='board')
+    status_tasks = TaskModelListSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = TaskList
+        fields = ['id', 'title', 'list_board', 'board', 'status_tasks', ]
+        extra_kwargs = {
+            'board':{'write_only':True}
+        }
+
+
+
+class WorkSpaceListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkSpace
+        fields = [
+            'id', 
+            'title', 
+            'owner', 
+            ]
+
+
+class BoardSerializer(serializers.ModelSerializer):
+    board_work_space = WorkSpaceListSerializer(read_only=True, source='work_space')
+    board_Tasklists = TaskListListSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Board
+        fields = [
+            'id', 
+            'title', 
+            'board_work_space', 
+            'background_image', 
+            'work_space', 
+            'board_Tasklists', 
+            ]
+        extra_kwargs = {
+            'work_space': {'write_only':True}
+        }
