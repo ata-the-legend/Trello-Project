@@ -24,7 +24,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    # permission_classes = [permissions.IsAuthenticated, CommentPermission]
+    permission_classes = [CommentPermission]
 
     def perform_destroy(self, instance):
         return instance.archive()
