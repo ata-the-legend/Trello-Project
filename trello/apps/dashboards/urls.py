@@ -1,7 +1,6 @@
 from rest_framework import routers
 from trello.apps.dashboards.views import workspace_views, board_views, task_views
 
-
 app_name = 'dashboards'
 urlpatterns = []
 

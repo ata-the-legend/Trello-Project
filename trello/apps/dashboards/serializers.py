@@ -236,3 +236,4 @@ class BoardSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'work_space': {'write_only':True}
         }
+

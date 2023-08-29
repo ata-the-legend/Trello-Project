@@ -32,3 +32,4 @@ class BoardPermission(permissions.IsAuthenticated):
         elif request.method == 'DELETE':
             return request.user == obj.work_space.owner
         return False
+
