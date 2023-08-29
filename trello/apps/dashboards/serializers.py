@@ -244,7 +244,6 @@ class AttachmentSerializer(serializers.ModelSerializer):
         return instance
     
 
-
 class TaskModelListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
@@ -291,3 +290,4 @@ class BoardSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'work_space': {'write_only':True}
         }
+
