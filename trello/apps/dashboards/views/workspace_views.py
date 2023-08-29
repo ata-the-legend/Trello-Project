@@ -1,4 +1,5 @@
 from rest_framework.viewsets import mixins, GenericViewSet
+from ..permissions import WorkspacePermissions
 from ..serializers import WorkspaceAddMemberSerializer, WorkspaceSerializer
 from ..models import WorkSpace
 from rest_framework.decorators import action
@@ -14,6 +15,7 @@ class WorkspaceViewSet(mixins.CreateModelMixin,
                    mixins.DestroyModelMixin,
                    GenericViewSet):
     
+    permission_classes = [WorkspacePermissions]
     queryset = WorkSpace.objects.all().prefetch_related('work_space_boards')
     serializer_class = WorkspaceSerializer
 
