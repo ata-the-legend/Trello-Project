@@ -302,7 +302,6 @@ class LabelSerializer(serializers.ModelSerializer):
         read_only_fields = ['update_at', 'create_at']
 
 
-
 class CommentSerializer(serializers.ModelSerializer):
     """
     Serializer for creating and updating comments.
@@ -333,3 +332,4 @@ class CommentSerializer(serializers.ModelSerializer):
         body = validated_data.get('body', instance.body)
         instance.update_comment(body=body)
         return instance
+

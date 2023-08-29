@@ -68,3 +68,4 @@ class CommentPermission(permissions.IsAuthenticated):
         elif request.method in ['POST', 'DELETE', 'PUT', 'PATCH']:
             return request.user == obj.author or request.user == obj.task.status.board.work_space.owner
         return False
+
