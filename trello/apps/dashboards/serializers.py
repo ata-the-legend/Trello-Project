@@ -22,7 +22,11 @@ class WorkspaceSerializer(serializers.ModelSerializer):
     work_space_boards = BoardListSerializer(many=True, read_only=True)
     owner = UserListSerializer(read_only=True)
     members = UserListSerializer(many=True, read_only=True)
-    add_members = serializers.PrimaryKeyRelatedField(queryset=User.objects.all().exclude(id=owner.data.get(id)), many=True, write_only=True)
+    add_members = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), 
+        many=True, 
+        write_only=True
+    )
 
     class Meta:
         model = WorkSpace
@@ -221,3 +225,33 @@ class TaskListSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'board':{'write_only':True}
         }
+
+
+class WorkSpaceListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkSpace
+        fields = [
+            'id', 
+            'title', 
+            'owner', 
+            ]
+
+
+class BoardSerializer(serializers.ModelSerializer):
+    board_work_space = WorkSpaceListSerializer(read_only=True, source='work_space')
+    board_Tasklists = TaskListListSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Board
+        fields = [
+            'id', 
+            'title', 
+            'board_work_space', 
+            'background_image', 
+            'work_space', 
+            'board_Tasklists', 
+            ]
+        extra_kwargs = {
+            'work_space': {'write_only':True}
+        }
+
