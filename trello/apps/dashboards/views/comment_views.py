@@ -3,7 +3,8 @@ from trello.apps.dashboards.models import Comment
 from rest_framework.mixins import DestroyModelMixin
 from trello.apps.dashboards.serializers import CommentSerializer
 from rest_framework.response import Response
-
+from rest_framework import permissions
+from trello.apps.dashboards.permissions import CommentPermission
 
 
 class SoftDestroyModelMixin:
@@ -20,5 +21,6 @@ class CommentViewSet(mixins.CreateModelMixin,
                    viewsets.GenericViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated, CommentPermission]
 
 
