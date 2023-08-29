@@ -7,6 +7,10 @@ from trello.apps.dashboards.permissions import LabelPermission
 
 
 class LabelViewSet(viewsets.ModelViewSet):
+    """
+    This viewset provides CRUD operations for managing labels. It supports creating,
+    retrieving, updating, and deleting labels.
+    """
  
     serializer_class = LabelSerializer
     queryset = Label.objects.all()
