@@ -212,8 +212,6 @@ class AttachmentSerializer(serializers.ModelSerializer):
     """
     Serializer for handling task attachments.
     """
-    # file = serializers.FileField()
-    # task = serializers.PrimaryKeyRelatedField(queryset=Task.objects.all())
     owner = UserListSerializer(read_only=True)
 
 
