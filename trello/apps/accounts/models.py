@@ -10,7 +10,6 @@ from django.utils import timezone
 from trello.apps.core.models import SoftQuerySet
 from trello.apps.dashboards.models import Board
 from django.utils.html import mark_safe
-
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.db import connection
 
@@ -59,9 +58,20 @@ class HardManager(UserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
 
-    id = models.UUIDField(editable=False, primary_key=True, default=uuid4)    
-    first_name = models.CharField(_("first name"), max_length=150, blank=True)
-    last_name = models.CharField(_("last name"), max_length=150, blank=True)
+    id = models.UUIDField(
+        editable=False, 
+        primary_key=True, 
+        default=uuid4)    
+    first_name = models.CharField(
+        _("first name"), 
+        max_length=150, 
+        blank=True
+        )
+    last_name = models.CharField(
+        _("last name"), 
+        max_length=150, 
+        blank=True
+        )
     email = models.EmailField(
         _("email address"), 
         unique=True, 
@@ -82,7 +92,10 @@ class User(AbstractBaseUser, PermissionsMixin):
             "Unselect this instead of deleting accounts."
         ),
     )
-    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+    date_joined = models.DateTimeField(
+        _("date joined"), 
+        default=timezone.now
+        )
     avatar = models.ImageField(
         _("avatar"), 
         upload_to='uploads/avatars/', 
@@ -134,43 +147,43 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
-    def archive(self):
+    def archive(self) -> None:
         self.is_active = False
         self.save()
 
-    def restore(self):
+    def restore(self) -> None:
         self.is_active= True
         self.save()
 
-    def membered_workspaces(self):
+    def membered_workspaces(self) -> QuerySet:
         return self.member_work_spaces.all()
 
-    def owened_workspases(self):
+    def owened_workspases(self) -> QuerySet:
         return self.owner_work_spaces.all()
 
     def tasked_boards(self):
         return set(Board.objects.filter(board_Tasklists__in= self.assigned_tasks.all().values('status')))
 
-    def active_tasks(self):
+    def active_tasks(self) -> QuerySet:
         return self.assigned_tasks.all()
         # return Task.objects.filter(assigned_to=self)
         # return self.assigned_tasks.filter(is_active=True).all()\
         #     .filter(status__is_active=True, status__board__is_active=True, status__board__work_space__is_active=True)
 
-    def tasks_has_deadline(self):
+    def tasks_has_deadline(self) -> QuerySet:
         return self.assigned_tasks.exclude(end_date__lt= timezone.now()) 
 
-    def activities_on_board(self, other):
+    def activities_on_board(self, other) -> QuerySet:
         return self.doer_activity.all().filter(task__status__board=other)
 
-    def teammates_in_workspace(self, other):
+    def teammates_in_workspace(self, other) -> QuerySet:
         if other.owner == self:
             return User.objects.filter(id__in = self.owened_workspases().filter(id=other.id).values('members'))
         else:
             return User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('members')).exclude(id=self.id) \
                   | User.objects.filter(id__in = self.membered_workspaces().filter(id=other.id).values('owner'))
         
-    def __str__(self):
+    def __str__(self) -> str:
         return self.get_full_name() if self.get_full_name() != '' else self.email
     
     def _perform_unique_checks(self, unique_checks):
@@ -219,9 +232,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                 errors.setdefault(key, []).append(
                     self.unique_error_message(model_class, unique_check)
                 )
-
         return errors
-    
 
 
 class RecycleManager(UserManager):
@@ -230,11 +241,9 @@ class RecycleManager(UserManager):
 
 
 class UserRecycle(User):
-
     objects = RecycleManager()
 
     class Meta:
         verbose_name = _("UserRecycle")
         verbose_name_plural = _("UsersRecycle")
         proxy = True
-
