@@ -1,14 +1,9 @@
 from rest_framework import permissions
 
 class CommentPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if view.action in ['list', 'retrieve']:
-            comment = view.get_object()
-            workspace_members = comment.task.status.board.work_space.members.all()
-            return user in workspace_members
-        elif view.action in ['create', 'update', 'destroy']:
-            comment = view.get_object()
-            workspace_owner = comment.task.status.board.work_space.owner
-            return user == comment.author or user == workspace_owner
-        return True
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user in obj.task.status.board.work_space.members.all() or request.user == obj.task.status.board.work_space.owner
+        elif request.method in ['POST', 'DELETE', 'PUT', 'PATCH']:
+            return request.user == obj.owner or request.user == obj.task.status.board.work_space.owner
+        return False
