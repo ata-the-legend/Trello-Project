@@ -3,7 +3,7 @@ from django.db import models
 from trello.apps.core.models import BaseModel, SoftDeleteMixin
 from django.utils.translation import gettext as _
 from django.core.exceptions import ValidationError
-
+from django.shortcuts import get_object_or_404
 
 class WorkSpace(BaseModel, SoftDeleteMixin):
     title = models.CharField(_("Title"), max_length=150, help_text='Title of the workspace')
@@ -156,27 +156,7 @@ class Label(BaseModel):
     def __str__(self):
         return self.title
     
-    @classmethod
-    def create_label(cls, title, board):
-        """
-        Creates a new Label object with the given parameters.
-        
-        :param title: The title of the label.
-        :type title: str
-        :param board: The board associated with the label.
-        :type board: Board
-        :return: The created Label object.
-        :rtype: Label
-        """
-        label = cls.objects.create(title=title, board=board)
-        return label
-    
-
-        # Create an Activity object to log the deletion of the label
-        # message = f"{user.get_full_name()} deleted the label {self.title} on task {task.title}."
-        # Activity.objects.create(task=task, doer=user, message=message)
-
-            
+          
     def get_label_choices():
         """
         Returns a list of choices for the labels field of a Task object.
@@ -223,9 +203,10 @@ class Task(BaseModel, SoftDeleteMixin):
         return f'Task {self.title}'
     
     @classmethod
-    def create_task(cls, doer, title, description, status, labels=None, start_date=None, end_date=None, assigned_to=None):
+    def create_task(cls, doer, *args, **kwargs):
         """
         Creates a new Task object with the given parameters.
+        Doer, title and status fields are required.
         
         :param title: The title of the task.
         :type title: str
@@ -246,26 +227,18 @@ class Task(BaseModel, SoftDeleteMixin):
         :return: The created Task object.
         :type: Task
         """
-
-        order = status.task_count() + 1
-
+        order = kwargs['status'].task_count() + 1
+        print(kwargs)
         task = cls.objects.create(
-            title=title,
-            description=description,
-            status=status,
+            *args,
+            **kwargs,
             order=order,
-            start_date=start_date,
-            end_date=end_date,
         )
-        if labels:
-            task.labels.set(labels)
-        if assigned_to:
-            task.assigned_to.set(assigned_to)
-        message = f"A new task {title} was created."
+        message = f"Task '{kwargs['title']}' was created."
         Activity.objects.create(task=task, doer=doer, message=message)
         return task
     
-    def update_task(self, doer, title=None, description=None, status=None, order=None, labels=None,start_date=None, end_date=None, assigned_to=None):
+    def update_task(self, doer, *args, **kwargs):
         """
         Updates the Task object with the given parameters.
         
@@ -287,42 +260,50 @@ class Task(BaseModel, SoftDeleteMixin):
         :type assigned_to: list[User]
         """
         messages = []
-        if title is not None:
-            self.title = title
-            message = f"Task title was changed to {self.title}."
-            messages.append(message)
-        if description is not None:
-            self.description = description
-            message = f"Task description was changed."
-            messages.append(message)
-        if status is not None:
-            self.status = status
-            message = f"Task status was changed to {self.status.title}."
-            messages.append(message)
-        if order is not None:
-            self.order = order
-        if start_date is not None:
-            self.start_date = start_date
-            message = f"Task start date was changed to {self.start_date}."
-            messages.append(message)
-        if end_date is not None:
-            self.end_date = end_date
-            message = f"Task end date was changed to {self.end_date}."
-            messages.append(message)
-        if labels is not None:
+        if title := kwargs.get('title', None):
+            if title != self.title:
+                self.title = title
+                message = f"Task title was changed to {self.title}."
+                messages.append(message)
+        if description := kwargs.get('description', None):
+            if description != self.description:
+                self.description = description
+                message = f"Task description was changed."
+                messages.append(message)
+        if status := kwargs.get('status', None):
+            if status != self.status:
+                self.status = status
+                message = f"Task status was changed to {self.status.title}."
+                messages.append(message)
+        if order := kwargs.get('order', None):
+            if order != self.order:
+                self.order = order
+        if start_date := kwargs.get('start_date', None):
+            if start_date != self.start_date:
+                self.start_date = start_date
+                message = f"Task start date was changed to {self.start_date}."
+                messages.append(message)
+        if end_date := kwargs.get('end_date', None):
+            if end_date != self.end_date:
+                self.end_date = end_date
+                message = f"Task end date was changed to {self.end_date}."
+                messages.append(message)
+        
+        self.save()
+        
+        if labels := kwargs.get('labels', None):
             self.labels.set(labels, clear=True)
-        if assigned_to is not None:
+        if assigned_to := kwargs.get('assigned_to', None):
             new_assigned_to = [user for user in assigned_to if user not in list(self.assigned_to.all())]
             deleted_assigned_to = [user for user in list(self.assigned_to.all()) if user not in assigned_to]
             self.assigned_to.set(assigned_to, clear=True)
             for user in new_assigned_to:
-                message = f"Task assined to {user.get_full_name()}."
+                message = f"Task assined to {user}."
                 messages.append(message)
             for user in deleted_assigned_to:
-                message = f"{user.get_full_name()} removed from task assigness."
+                message = f"{user} removed from task assigness."
                 messages.append(message)
 
-        self.save()
 
         for message in messages:
             Activity.objects.create(task=self, doer=doer, message=message)
@@ -423,9 +404,9 @@ class Comment(BaseModel, SoftDeleteMixin):
     
         # Create an Activity object to log the creation of the comment
         if parent:
-            message = f"{author.get_full_name()} replied to a comment on task {task.title}."
+            message = f"{author} replied to a comment on task {task.title}."
         else:
-            message = f"{author.get_full_name()} added a new comment on task {task.title}."
+            message = f"{author} added a new comment on task {task.title}."
     
         Activity.objects.create(task=task, doer=author, message=message)
     
@@ -441,7 +422,7 @@ class Comment(BaseModel, SoftDeleteMixin):
         if body is not None:
             self.body = body
             self.save()
-            message = f"{self.author.get_full_name()} updated a comment on task {self.task.title}."
+            message = f"{self.author} updated a comment on task {self.task.title}."
             Activity.objects.create(task=self.task, doer=self.author, message=message)
 
     def archive(self):
@@ -449,7 +430,7 @@ class Comment(BaseModel, SoftDeleteMixin):
         Soft-deletes the Comment object.
         """
         # Create an Activity object to log the deletion of the comment
-        message = f"{self.author.get_full_name()} deleted a comment on task {self.task.title}."
+        message = f"{self.author} deleted a comment on task {self.task.title}."
         Activity.objects.create(task=self.task, doer=self.author, message=message)
 
         return super().archive()
@@ -482,7 +463,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
     @classmethod
     def create(cls, file, task, owner):
         attachment = cls.objects.create(file=file,task=task, owner=owner)
-        message = f"{owner.get_full_name()} attached a new file."
+        message = f"{owner} attached a new file."
         Activity.objects.create(task= task, doer=owner, message = message)
         return attachment
     
@@ -491,7 +472,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
         Soft-deletes the Comment object.
         """
         # Create an Activity object to log the deletion of the comment
-        message = f"{self.owner.get_full_name()} deleted a attachment on task {self.task.title}."
+        message = f"{self.owner} deleted a attachment on task {self.task.title}."
         Activity.objects.create(task=self.task, doer=self.owner, message=message)
 
         return super().archive()
@@ -507,7 +488,7 @@ class Attachment(BaseModel , SoftDeleteMixin):
 
 
     def __str__(self):
-        return f"Attached by {self.owner.get_full_name()}."
+        return f"Attached by {self.owner}."
 
 
 class Activity(BaseModel):
@@ -538,4 +519,4 @@ class Activity(BaseModel):
 
 
     def __str__(self):
-        return f'{self.create_at} - {self.message}'
+        return f'Done By {self.doer}'
