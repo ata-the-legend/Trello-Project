@@ -3,6 +3,8 @@ from trello.apps.accounts.models import User
 from .models import Activity, Attachment, Board, Comment, Label, Task, TaskList, WorkSpace
 import traceback
 from rest_framework.utils import model_meta
+from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 
 class UserListSerializer(serializers.ModelSerializer):
 
@@ -109,7 +111,24 @@ class TaskSerializer(serializers.ModelSerializer):
             'description': {'required': False},
             'status': {'write_only':True},
         }
-
+        
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        print(self.instance)
+        if self.instance is not None:
+            status = self.instance.status
+        else:
+            status = attrs['status']
+        assigns = attrs['assigned_to']
+        team_qs = status.board.work_space.work_space_members()
+        team_owner = User.objects.get(id=status.board.work_space.owner.id)
+        try:
+            for user in assigns:
+                if not team_owner == user:
+                    team_qs.get(id=user.id)
+        except ObjectDoesNotExist:
+            raise ValidationError('User is not in workspace team')
+        return attrs
 
     def _user(self):
         request = self.context.get('request', None)
