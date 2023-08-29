@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from .models import TaskList, WorkSpace
 
 class WorkspacePermissions(permissions.IsAuthenticated):
 
@@ -58,3 +59,4 @@ class LabelPermission(permissions.IsAuthenticated):
             return request.user in obj.board.work_space.members.all() or request.user == obj.board.work_space.owner
         
         return False
+

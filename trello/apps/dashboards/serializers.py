@@ -301,4 +301,3 @@ class LabelSerializer(serializers.ModelSerializer):
         fields = ('__all__')
         read_only_fields = ['update_at', 'create_at']
 
-    
