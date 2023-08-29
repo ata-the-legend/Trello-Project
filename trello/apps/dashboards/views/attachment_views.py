@@ -3,6 +3,8 @@ from rest_framework.mixins import DestroyModelMixin
 from trello.apps.dashboards.models import Attachment
 from trello.apps.dashboards.serializers import AttachmentSerializer
 from rest_framework.response import Response
+from rest_framework import permissions
+from trello.apps.dashboards.permissions import AttachmentPermission
 
 
 class SoftDestroyModelMixin:
@@ -18,4 +20,5 @@ class AttachmentViewSet(mixins.CreateModelMixin,
                         viewsets.GenericViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated, AttachmentPermission]
     
