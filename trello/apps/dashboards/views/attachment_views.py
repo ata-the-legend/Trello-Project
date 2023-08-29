@@ -8,6 +8,9 @@ from trello.apps.dashboards.permissions import AttachmentPermission
 
 
 class SoftDestroyModelMixin:
+     """
+      Mixin for soft-deleting model instances.
+     """
      def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.archive()
@@ -18,6 +21,12 @@ class AttachmentViewSet(mixins.CreateModelMixin,
                         mixins.UpdateModelMixin,
                         SoftDestroyModelMixin,
                         viewsets.GenericViewSet):
+    """
+    This viewset allows creating, retrieving, updating, and soft-deleting attachments.
+    Soft-deletion is performed using the 'SoftDestroyModelMixin' to archive attachments
+    instead of permanently deleting them.
+
+    """
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
     permission_classes = [permissions.IsAuthenticated, AttachmentPermission]
