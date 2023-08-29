@@ -114,12 +114,11 @@ class TaskSerializer(serializers.ModelSerializer):
         
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        print(self.instance)
         if self.instance is not None:
             status = self.instance.status
         else:
             status = attrs['status']
-        assigns = attrs['assigned_to']
+        assigns = attrs.get('assigned_to', [])
         team_qs = status.board.work_space.work_space_members()
         team_owner = User.objects.get(id=status.board.work_space.owner.id)
         try:
