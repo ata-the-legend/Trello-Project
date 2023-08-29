@@ -3,11 +3,12 @@ from rest_framework import status, filters
 from rest_framework.response import Response
 from .paginations import UserResultsSetPagination
 from .models import User
-from .serializers import UserListSerializer, UserSerializer, UserPasswordSerializer
+from .serializers import UserListSerializer, UserSerializer, UserPasswordSerializer, WorkSpace
 from .permissions import UserPermission
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema
+from django.db.models import Prefetch
 
 
 class SoftDestroyModelMixin:
@@ -35,7 +36,13 @@ class UserViewSet(SoftDestroyModelMixin,
     """
     
     permission_classes = [UserPermission, ]
-    queryset = User.objects.all()
+    queryset = User.objects.all().prefetch_related(
+        Prefetch(
+            'owner_work_spaces', 
+            queryset=WorkSpace.objects.prefetch_related('members')
+            )
+        )
+    
     serializer_class = UserSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['^first_name', '^last_name', '^email']
