@@ -1,17 +1,11 @@
 from rest_framework import permissions
-from trello.apps.dashboards.models import *
 
 
 
-class LabelPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if view.action in ['list', 'retrieve']:
-            label = view.get_object()
-            workspace_members = label.board.work_space.members.all()
-            return user in workspace_members
-        elif view.action in ['create', 'update', 'destroy']:
-            label = view.get_object()
-            workspace_owner = label.board.work_space.owner
-            return user == label.owner or user == workspace_owner
-        return True
+class LabelPermission(permissions.IsAuthenticated):
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS + ('POST', 'DELETE', 'PUT', 'PATCH',):
+            return request.user in obj.board.work_space.members.all() or request.user == obj.board.work_space.owner
+        
+        return False
