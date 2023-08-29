@@ -14,7 +14,7 @@ class CommentViewSet(mixins.CreateModelMixin,
     Soft-deletion is performed using the 'SoftDestroyModelMixin' to archive comments
     instead of permanently deleting them.
     """
-    queryset = Comment.objects.all().select_related('auther')
+    queryset = Comment.objects.all().select_related('author')
     serializer_class = CommentSerializer
     permission_classes = [CommentPermission]
 

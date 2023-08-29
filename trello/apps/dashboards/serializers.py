@@ -308,12 +308,11 @@ class CommentSerializer(serializers.ModelSerializer):
     Serializer for creating and updating comments.
     """
     
-   
-
-
+    author = UserListSerializer(read_only=True)
     class Meta:
         model = Comment
         exclude =('is_active',)
+        read_only_fields = ['update_at', 'create_at']
 
 
     def create(self, validated_data):
