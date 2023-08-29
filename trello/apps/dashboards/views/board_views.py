@@ -1,4 +1,5 @@
 from rest_framework.viewsets import GenericViewSet, mixins
+from ..permissions import BoardPermission
 from ..serializers import BoardSerializer
 from ..models import Board
 
@@ -10,7 +11,7 @@ class BoardModelViewSet(mixins.CreateModelMixin,
 
     serializer_class = BoardSerializer
     queryset = Board.objects.all().select_related('work_space').prefetch_related('board_Tasklists')
-    permission_classes = []
+    permission_classes = [BoardPermission]
     
     def perform_destroy(self, instance):
-        instance.archive()
+        return instance.archive()
