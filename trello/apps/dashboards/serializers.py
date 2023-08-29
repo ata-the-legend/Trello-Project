@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from trello.apps.accounts.models import User
-from .models import Board, WorkSpace, TaskList
+from .models import Board, WorkSpace, TaskList, Task
 
 class UserListSerializer(serializers.ModelSerializer):
 
@@ -18,7 +18,8 @@ class WorkspaceSerializer(serializers.ModelSerializer):
     work_space_boards = BoardListSerializer(many=True, read_only=True)
     owner = UserListSerializer(read_only=True)
     members = UserListSerializer(many=True, read_only=True)
-    add_members = serializers.PrimaryKeyRelatedField(queryset=User.objects.all().exclude(id=owner.data.get(id)), many=True, write_only=True)
+    add_members = serializers.PrimaryKeyRelatedField(queryset=User.objects.all().exclude(id=owner.data.get(id)),\
+         many=True, write_only=True)
 
     class Meta:
         model = WorkSpace
@@ -58,24 +59,19 @@ class WorkspaceAddMemberSerializer(serializers.Serializer):
     new_members = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), many=True)
 
 
+class TaskModelListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'order', 'labels', 'start_date', 'end_date', 'assigned_to', ]
+
+
 class TaskListSerializer(serializers.ModelSerializer):
-    board = BoardListSerializer()
+    list_board = BoardListSerializer(read_only=True, source='board')
+    status_tasks = TaskModelListSerializer(read_only=True, many=True)
 
     class Meta:
         model = TaskList
-        fields = ['title', 'board']
-
-    # def create(self, validated_data):
-    #     workspace_data = validated_data.pop('board')
-    #     tasklist = TaskList.objects.create(**validated_data)
-    #     Board.objects.create(tasklist=tasklist, **workspace_data)
-    #     return tasklist
-
-    # def update(self, instance, validated_data):
-    #     workspace_data = validated_data.pop('board')
-    #     work_space = instance.board
-
-    #     instance.title = validated_data.get('title', instance.title)
-    #     instance.save()
-
-    #     return instance    
+        fields = ['id', 'title', 'list_board', 'board', 'status_tasks', ]
+        extra_kwargs = {
+            'board':{'write_only':True}
+        }
