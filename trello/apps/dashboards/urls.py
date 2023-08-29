@@ -1,5 +1,5 @@
 from rest_framework import routers
-from .views.board_views import BoardModelViewSet
+from trello.apps.dashboards.views import workspace_views, board_views
 
 app_name = 'dashboards'
 urlpatterns = []
@@ -7,8 +7,7 @@ urlpatterns = []
 router = routers.DefaultRouter()
 # router.register(prefix='' ,viewset=...ViewSet)
 # router.register(prefix='' ,viewset=...ViewSet)
-# router.register(prefix='' ,viewset=...ViewSet)
-router.register(r'board-viewset', BoardModelViewSet)
+router.register(prefix='boards', viewset=board_views.BoardModelViewSet)
 
 urlpatterns += router.urls
 
