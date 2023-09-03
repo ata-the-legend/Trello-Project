@@ -1,4 +1,3 @@
-.vscode
 *.pyc
 *.pyo
 *.mo
@@ -6,6 +5,7 @@
 *.css.map
 *.egg-info
 *.sql.gz
+.vscode
 .cache
 .project
 .idea
@@ -18,7 +18,7 @@
 __pycache__
 dist
 docs
-env
+# env
 logs
 src/{{ project_name }}/settings/local.py
 
@@ -27,5 +27,5 @@ Dockerfile
 htmlcov
 schema.yml
 ERD.png
-/venv
+venv/
 .coverage

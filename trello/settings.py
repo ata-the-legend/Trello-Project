@@ -46,15 +46,20 @@ DEVELOPED_APPS = [
     'trello.apps.dashboards.apps.DashboardsConfig',
 ]
 THIRD_PARTY_APPS = [
-    'coverage',
     'rest_framework',
     'django_filters',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
 ]
 
-INSTALLED_APPS = SYSTEM_APPS + DEVELOPED_APPS + THIRD_PARTY_APPS
+DEV_TOOLS = [
+    'coverage',
+] 
 
+INSTALLED_APPS = SYSTEM_APPS + DEVELOPED_APPS + THIRD_PARTY_APPS 
+
+if DEBUG==True:
+    INSTALLED_APPS += DEV_TOOLS
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -122,7 +127,7 @@ WSGI_APPLICATION = 'trello.wsgi.application'
 
 DATABASES = {
    'default': {
-       "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
+        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
         "NAME": os.environ.get("SQL_DATABASE", BASE_DIR / "db.sqlite3"),
         "USER": os.environ.get("SQL_USER", "user"),
         "PASSWORD": os.environ.get("SQL_PASSWORD", "password"),
@@ -220,15 +225,15 @@ if not DEBUG:
     from sentry_sdk.integrations.django import DjangoIntegration
 
     sentry_sdk.init(
-    dsn="https://4ccd4883458fb8f5dbcae80f2e748bea@o4505626896367616.ingest.sentry.io/4505626911178752",
-    integrations=[DjangoIntegration()],
+        dsn="https://4ccd4883458fb8f5dbcae80f2e748bea@o4505626896367616.ingest.sentry.io/4505626911178752",
+        integrations=[DjangoIntegration()],
 
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production.
-    traces_sample_rate=1.0,
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=1.0,
 
-    # If you wish to associate users to errors (assuming you are using
-    # django.contrib.auth) you may enable sending PII data.
-    send_default_pii=True
+        # If you wish to associate users to errors (assuming you are using
+        # django.contrib.auth) you may enable sending PII data.
+        send_default_pii=True
     )
