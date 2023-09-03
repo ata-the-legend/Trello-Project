@@ -201,8 +201,8 @@ class TaskList(BaseModel, SoftDeleteMixin):
     def __str__(self) -> str:
         return f'{self.title} - related board: {self.board}'
 
-    def add_task(self, doer, title: str, description: str ='', labels: str | None =None,\
-         start_date=None, end_date=None, assigned_to=None):
+    def add_task(self, doer, title: str, description: str ='',
+         start_date=None, end_date=None):
         """
         Add new tak to the task list.
         """
@@ -213,8 +213,6 @@ class TaskList(BaseModel, SoftDeleteMixin):
             description=description,
             start_date=start_date,
             end_date=end_date,
-            labels=labels,
-            assigned_to=assigned_to,
         )
 
     def task_count(self) -> QuerySet:
@@ -332,7 +330,7 @@ class Task(BaseModel, SoftDeleteMixin):
         Doer, title and status fields are required.
         """
         order = kwargs['status'].task_count() + 1
-        print(kwargs)
+        
         task = cls.objects.create(
             *args,
             **kwargs,

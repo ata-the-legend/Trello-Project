@@ -12,15 +12,8 @@ class LabelTestCase(TestCase):
         self.test_user = User.objects.create_user(password="testpassword", email="testuser@example.com")
         self.test_workspace = WorkSpace.objects.create(title="Test Workspace", owner=self.test_user)
         self.test_board = Board.objects.create(title="Test Board", work_space=self.test_workspace)
+        self.label = Label.objects.create(title="Test Label", board=self.test_board)
         
-
-    def test_create_label(self):
-        label_title = "Test Label"
-        label = Label.objects.create(title=label_title, board=self.test_board)
-        saved_label = Label.objects.get(title=label_title)
-        self.assertEqual(saved_label.title, label_title)
-        self.assertEqual(saved_label.board, self.test_board)
-
 
     def test_get_label_choices(self):
         label_titles = ['Label 1', 'Label 2', 'Label 3']
@@ -29,33 +22,25 @@ class LabelTestCase(TestCase):
         label_choices = Label.get_label_choices()
         for title in label_titles:
             self.assertIn(title, label_choices)
-        self.assertEqual(len(label_titles), len(label_choices))
+        self.assertEqual(len(label_titles), len(label_choices) - 1) # - self.label
 
-   
-        
+    
     def test_get_tasks(self):
-       def test_get_tasks(self):
-        label = Label.objects.create(title="Test Label", board=self.test_board)
-        task1 = Task.objects.create(title="Test Task 1", status=self.test_board.board_Tasklists.first())
-        task2 = Task.objects.create(title="Test Task 2", status=self.test_board.board_Tasklists.first())
-        task1.labels.add(label)
-        task2.labels.add(label)
-        tasks = label.get_tasks()
-        self.assertEqual(tasks.count(), 2) 
-        self.assertQuerysetEqual(tasks, [repr(task1), repr(task2)], ordered=False)  
-
+        self.assertCountEqual(self.label.get_tasks(), self.label.label_tasks.all())
+         
 
     def test_get_task_count(self):
-        label_title = "Test Label"
-        label = Label.objects.create(title=label_title, board=self.test_board)
         task_titles = ["Task 1", "Task 2", "Task 3"]
         for title in task_titles:
             task_list = TaskList.objects.create(title="Test TaskList", board=self.test_board)
             task = Task.objects.create(title=title, description="Test description", status=task_list)
-            task.labels.add(label)
-        task_count = label.get_task_count()
+            task.labels.add(self.label)
+        task_count = self.label.get_task_count()
         self.assertEqual(task_count, len(task_titles))
 
+    
+    def test_str(self):
+        self.assertEqual(str(self.label), self.label.title)
 
 
 class CommentTestCase(TestCase):
@@ -149,6 +134,7 @@ class TaskTestCase(TestCase):
         self.work_space = WorkSpace.objects.create(title="Test WorkSpace", owner=self.owner)
         self.board = Board.objects.create(title="Test Board", work_space=self.work_space)
         self.task_list = TaskList.objects.create(title="Test Task List", board=self.board)
+        self.task_list_2 = TaskList.objects.create(title="Test Task List 2", board=self.board)
         self.label1 = Label.objects.create(title="Label 1", board=self.board)
         self.label2 = Label.objects.create(title="Label 2", board=self.board)
         self.task = Task.objects.create(
@@ -162,85 +148,81 @@ class TaskTestCase(TestCase):
 
 
 
-    # def test_create_task(self):
-    #     task = Task.create_task(
-    #         title="Test Task",
-    #         doer=self.owner,
-    #         description="Test Description",
-    #         status=self.task_list,
-    #         labels=[self.label1, self.label2],
-    #         start_date=timezone.make_aware(timezone.datetime.strptime("2023-01-01", "%Y-%m-%d")),  # Convert to datetime
-    #         end_date=timezone.make_aware(timezone.datetime.strptime("2023-12-31", "%Y-%m-%d")),    # Convert to datetime
-    #         assigned_to=[self.user1, self.user2]
-    #     )
-    #     self.assertEqual(task.start_date.strftime('%Y-%m-%d'), "2023-01-01")
-    #     self.assertEqual(task.end_date.strftime('%Y-%m-%d'), "2023-12-31")
-    #     self.assertEqual(task.title, "Test Task")
-    #     self.assertEqual(task.description, "Test Description")
-    #     self.assertEqual(task.status, self.task_list)
-    #     self.assertCountEqual(task.labels.all(), [self.label1, self.label2])
-    #     self.assertCountEqual(task.assigned_to.all(), [self.user1, self.user2])
+    def test_create_task(self):
+        task = Task.create_task(
+            title="Test Task",
+            doer=self.owner,
+            description="Test Description",
+            status=self.task_list,
+            start_date=timezone.make_aware(timezone.datetime.strptime("2023-01-01", "%Y-%m-%d")),  # Convert to datetime
+            end_date=timezone.make_aware(timezone.datetime.strptime("2023-12-31", "%Y-%m-%d")),    # Convert to datetime
+        )
+        self.assertEqual(task.start_date.strftime('%Y-%m-%d'), "2023-01-01")
+        self.assertEqual(task.end_date.strftime('%Y-%m-%d'), "2023-12-31")
+        self.assertEqual(task.title, "Test Task")
+        self.assertEqual(task.description, "Test Description")
+        self.assertEqual(task.status, self.task_list)
 
 
 
-    # def test_update_task(self):
-    #     new_title = "Updated Title"
-    #     new_description = "Updated Description"
-    #     new_status = self.task_list  # Update with a valid TaskList instance
-    #     new_order = 2
-    #     new_labels = [self.label1, self.label2]  # Update with valid Label instances
-    #     new_start_date = timezone.datetime(2023, 8, 1, tzinfo=timezone.utc)
-    #     new_end_date = timezone.datetime(2023, 8, 15, tzinfo=timezone.utc)
+    def test_update_task(self):
+        new_title = "Updated Title"
+        new_description = "Updated Description"
+        new_status = self.task_list_2  # Update with a valid TaskList instance
+        new_order = 2
+        new_labels = [self.label1, self.label2]  # Update with valid Label instances
+        new_start_date = timezone.datetime(2023, 8, 1, tzinfo=timezone.utc)
+        new_end_date = timezone.datetime(2023, 8, 15, tzinfo=timezone.utc)
 
-    #     initial_assigned_users = [self.user1, self.user2]
-    #     removed_user = self.user1
+        initial_assigned_users = [self.user1, self.user2]
+        removed_user = self.user1
 
-    #     updated_assigned_users = [user for user in initial_assigned_users if user != removed_user]
+        updated_assigned_users = [user for user in initial_assigned_users if user != removed_user]
 
-    #     self.task.update_task(
-    #         doer=self.user1,
-    #         assigned_to=initial_assigned_users,
-    #     )
+        self.task.update_task(
+            doer=self.user1,
+            assigned_to=initial_assigned_users,
+        )
 
-    #     # Call the update_task method
-    #     self.task.update_task(
-    #     doer=self.user1,
-    #     title=new_title,
-    #     description=new_description,
-    #     status=new_status,
-    #     order=new_order,
-    #     labels=new_labels,
-    #     start_date=new_start_date,
-    #     end_date=new_end_date,
-    #     assigned_to=initial_assigned_users,
-    # )
-    #     # Refresh the object from the database to get the updated values
-    #     self.task.refresh_from_db()
+        # Call the update_task method
+        self.task.update_task(
+        doer=self.user1,
+        title=new_title,
+        description=new_description,
+        status=new_status,
+        order=new_order,
+        labels=new_labels,
+        start_date=new_start_date,
+        end_date=new_end_date,
+        assigned_to=updated_assigned_users,
+    )
+        # Refresh the object from the database to get the updated values
+        self.task.refresh_from_db()
 
-    #     # Assert the changes
-    #     self.assertEqual(self.task.title, new_title)
-    #     self.assertEqual(self.task.description, new_description)
-    #     self.assertEqual(self.task.status, new_status)
-    #     self.assertEqual(self.task.order, new_order)
-    #     self.assertCountEqual(list(self.task.labels.all()), new_labels)
-    #     self.assertEqual(self.task.start_date, new_start_date)
-    #     self.assertEqual(self.task.end_date, new_end_date)
-    #     self.assertCountEqual(list(self.task.assigned_to.all()), updated_assigned_users)        
-    #     self.assertNotIn(removed_user, self.task.assigned_to.all())
+        # Assert the changes
+        self.assertEqual(self.task.title, new_title)
+        self.assertEqual(self.task.description, new_description)
+        self.assertEqual(self.task.status, new_status)
+        self.assertEqual(self.task.order, new_order)
+        self.assertCountEqual(list(self.task.labels.all()), new_labels)
+        self.assertEqual(self.task.start_date, new_start_date)
+        self.assertEqual(self.task.end_date, new_end_date)
+        self.assertCountEqual(list(self.task.assigned_to.all()), updated_assigned_users)        
+        self.assertNotIn(removed_user, self.task.assigned_to.all())
 
-    #     # Retrieve Activity instances related to the task and assert messages
-    #     activity_messages = [activity.message for activity in Activity.objects.filter(task=self.task)]
-    #     expected_messages = [
-    #         f"Task title was changed to {new_title}.",
-    #         "Task description was changed.",
-    #         f"Task status was changed to {new_status.title}.",
-    #         f"Task start date was changed to {new_start_date}.",
-    #         f"Task end date was changed to {new_end_date}.",
-    #         f"Task assined to {self.user1.get_full_name()}.",
-    #         f"Task assined to {self.user2.get_full_name()}.",
-    #         f"{removed_user.get_full_name()} removed from task assigness.",
-    #     ]
-    #     self.assertCountEqual(activity_messages, expected_messages)
+        # Retrieve Activity instances related to the task and assert messages
+        activity_messages = [activity.message for activity in Activity.objects.filter(task=self.task)]
+        expected_messages = [
+            f"Task title was changed to {new_title}.",
+            "Task description was changed.",
+            f"Task status was changed to {new_status.title}.",
+            f"Task start date was changed to {new_start_date}.",
+            f"Task end date was changed to {new_end_date}.",
+            f"Task assined to {self.user1}.",
+            f"Task assined to {self.user2}.",
+            f"{removed_user} removed from task assigness.",
+        ]
+        self.assertCountEqual(activity_messages, expected_messages)
 
 
     def test_get_comment(self):
@@ -379,10 +361,10 @@ class BoardTestCase(TestCase):
         board_labels = self.board_ata_1_1.get_board_labels()
         self.assertCountEqual(board_labels, self.board_ata_1_1.board_labels.all())
 
-    # def test_get_status_choices(self):
-    #     choices = self.board_ata_1_1.get_status_choices()
-    #     titles = self.board_ata_1_1.board_Tasklists.all()
-    #     self.assertQuerysetEqual(choices, map(repr, titles))
+    def test_get_status_choices(self):
+        choices = self.board_ata_1_1.get_status_choices()
+        titles = self.board_ata_1_1.board_Tasklists.all()
+        self.assertQuerysetEqual(choices, titles)
 
 
     def test_archive(self):
@@ -429,10 +411,10 @@ class TaskListTestCase(TestCase):
     def test_str(self):
         self.assertEqual(str(self.list_1_1_1), f'{self.list_1_1_1.title} - related board: {self.list_1_1_1.board}')
 
-    # def test_add_task(self):
-    #     l_task = self.list_1_1_2.add_task(doer=self.user_ata, title='Task Two', description='...')
-    #     task = self.list_1_1_2.task_set.filter(title='Task Two')  
-    #     self.assertEqual(l_task, task[0])
+    def test_add_task(self):
+        l_task = self.list_1_1_2.add_task(doer=self.user_ata, title='Task Two', description='...')
+        task = self.list_1_1_2.status_tasks.filter(title='Task Two')  
+        self.assertEqual(l_task, task[0])
 
     def test_task_count(self):
         self.assertEqual(self.list_1_1_1.task_count(), self.list_1_1_1.status_tasks.all().count())
@@ -558,24 +540,24 @@ class AttachmentTestCase(TestCase):
         self.assertTrue(all(a.task.status.board == expected_board for a in attachments))
 
 
-        def test_archive(self):
-            attachment = Attachment.objects.create(file='testfile.pdf', task=self.task, owner=self.user)
-            
-            self.assertTrue(attachment.is_active)  
-            
-            attachment.archive()
-            
-            self.assertFalse(attachment.is_active) 
-            activity = Activity.objects.get(task=self.task, doer=self.user)
-            self.assertEqual(activity.message, f"{self.user} deleted a attachment on task {self.task.title}.")
-            
+    def test_archive(self):
+        attachment = Attachment.objects.create(file='testfile.pdf', task=self.task, owner=self.user)
+        
+        self.assertTrue(attachment.is_active)  
+        
+        attachment.archive()
+        
+        self.assertFalse(attachment.is_active) 
+        activity = Activity.objects.get(task=self.task, doer=self.user)
+        self.assertEqual(activity.message, f"{self.user} deleted a attachment on task {self.task.title}.")
+        
 
-            attachment.restore()
-            self.assertTrue(attachment.is_active)  
+        attachment.restore()
+        self.assertTrue(attachment.is_active)  
 
 
-        def test_attachment_str(self):
-            attachment_str = str(self.attachment)
-            expected_str = f"Attached by {self.user}."
-            self.assertEqual(attachment_str, expected_str)
-            
+    def test_attachment_str(self):
+        attachment_str = str(self.attachment)
+        expected_str = f"Attached by {self.user}."
+        self.assertEqual(attachment_str, expected_str)
+        
