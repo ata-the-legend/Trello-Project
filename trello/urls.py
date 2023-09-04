@@ -32,12 +32,14 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('trello.apps.accounts.urls', namespace='accounts')),
     path('dashboards/', include('trello.apps.dashboards.urls', namespace='dashboards')),
-] + doc_patterns + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
-    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + doc_patterns 
 
 admin.site.index_title = "Trello Project"
 admin.site.site_header = "Trello Admin"
 admin.site.site_title = "Trello Admin Panel"
 
 
+if bool(settings.DEBUG):
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
+    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

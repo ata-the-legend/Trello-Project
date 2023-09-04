@@ -60,6 +60,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     id = models.UUIDField(
         editable=False, 
+        unique=True,
         primary_key=True, 
         default=uuid4)    
     first_name = models.CharField(
